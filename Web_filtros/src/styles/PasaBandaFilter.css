@@ -1,0 +1,305 @@
+/* Reset de estilos para el body y html */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* Estilos globales para el scroll */
+body {
+  scrollbar-width: thin;
+  scrollbar-color: #00ff9d rgba(0,0,0,0.3);
+}
+
+/* Contenedor principal con mucho espacio para scroll */
+.filter-container {
+  padding: 20px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: 200vh; /* Mucho más espacio para scroll */
+  padding-top: 200px; /* Más espacio arriba */
+  position: relative;
+  margin-bottom: 100px;
+}
+
+/* Hacer los paneles más compactos */
+.input-paper, 
+.results-paper {
+  background-color: rgba(0,0,0,0.3) !important;
+  border: 1px solid rgba(0, 255, 157, 0.3) !important;
+  padding: 12px !important;
+  margin-bottom: 12px;
+}
+
+/* Inputs más pequeños */
+.MuiTextField-root {
+  margin-bottom: 8px !important;
+  
+  & .MuiInputBase-input {
+    padding: 8px !important;
+    font-size: 0.9rem !important;
+  }
+}
+
+/* Títulos más pequeños */
+.section-title {
+  font-size: 1rem !important;
+  margin-bottom: 12px !important;
+}
+
+/* Contenedor de la imagen del circuito */
+.circuit-container {
+  width: 90%;
+  position: relative;
+  margin: 15px auto;
+}
+
+.circuit-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Valores sobre el circuito */
+.circuit-value {
+  position: absolute;
+  color: #00ff9d !important;
+  font-size: 0.9rem !important;
+  font-weight: bold !important;
+  background-color: rgba(0,0,0,0.7);
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+/* Títulos y textos */
+.section-title {
+  color: #00ff9d !important;
+  margin-bottom: 15px !important;
+  font-size: 1.1rem !important;
+}
+
+/* Campos de entrada */
+.MuiTextField-root {
+  margin-bottom: 12px !important;
+  width: 100% !important;
+}
+
+/* Botón calcular */
+.calculate-button {
+  margin-top: 15px !important;
+  padding: 8px !important;
+  width: 100% !important;
+  background-color: #00ff9d !important;
+  color: black !important;
+}
+
+/* Scroll personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.3);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #00ff9d;
+  border-radius: 4px;
+}
+
+/* Resultados */
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+/* Media queries para responsividad */
+@media (min-width: 768px) {
+  .results-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Asegurar que los inputs se ajusten */
+.MuiGrid-container {
+  width: 100% !important;
+  margin: 0 !important;
+  gap: 10px !important;
+}
+
+.MuiGrid-item {
+  padding: 6px !important;
+}
+
+/* Modo oscuro */
+.dark-mode .input-paper {
+  background-color: rgba(0,0,0,0.3) !important;
+  border: 1px solid rgba(0, 255, 157, 0.3) !important;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.dark-mode .section-title {
+  color: #00ff9d !important;
+}
+
+/* Modo claro */
+.light-mode .input-paper {
+  background-color: #e0e0e0 !important; /* Color gris como el header */
+  border: 1px solid #ccc !important;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.light-mode .section-title {
+  color: #000000 !important;
+}
+
+/* Estilos para modo claro */
+@media (prefers-color-scheme: light) {
+  .results-paper {
+    background-color: #f5f5f5 !important;
+    border: 1px solid #e0e0e0 !important;
+  }
+
+  .circuit-value,
+  .section-title,
+  .result-title {
+    color: #006b44 !important;
+  }
+
+  .result-value {
+    color: #000000 !important;
+  }
+
+  .params-title {
+    color: #006b44 !important;
+  }
+
+  .filter-params {
+    color: #000000 !important;
+  }
+}
+
+/* Posiciones específicas para cada valor */
+.value-nr-top { 
+  top: 5%; 
+  left: 30%; 
+  font-size: 1rem !important;
+}
+
+.value-nr-left { 
+  top: 30%; 
+  left: 5%;
+  font-size: 1rem !important;
+}
+
+.value-c { 
+  top: 30%; 
+  left: 25%;
+  font-size: 1rem !important;
+}
+
+.value-r { 
+  top: 50%; 
+  left: 35%;
+  font-size: 1rem !important;
+}
+
+.value-rf { 
+  top: 30%; 
+  right: 15%;
+  font-size: 1rem !important;
+}
+
+.value-ra { 
+  bottom: 20%; 
+  right: 15%;
+  font-size: 1rem !important;
+}
+
+.result-section {
+  padding: 15px;
+  background-color: rgba(0,0,0,0.5);
+  border-radius: 4px;
+}
+
+.result-title {
+  color: #00ff9d !important;
+  margin-bottom: 10px !important;
+  font-weight: bold !important;
+}
+
+.result-value {
+  color: white !important;
+  margin-left: 10px !important;
+  margin-bottom: 5px !important;
+  font-size: 0.9rem !important;
+}
+
+.filter-params {
+  color: white !important;
+  margin-left: 16px !important;
+}
+
+.params-title {
+  color: #00ff9d !important;
+  margin-bottom: 8px !important;
+}
+
+/* Estilo para el scroll principal de la página */
+::-webkit-scrollbar {
+  width: 8px;
+  background-color: rgba(0,0,0,0.3);
+}
+
+::-webkit-scrollbar-track {
+  background-color: rgba(0,0,0,0.3);
+}
+
+/* Para Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #00ff9d rgba(0,0,0,0.3);
+}
+
+/* Asegurar que el contenido sea scrolleable */
+#root {
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+.cyber-input {
+  background-color: rgba(0,0,0,0.3) !important;
+  border-radius: 4px;
+}
+
+.cyber-input .MuiOutlinedInput-root {
+  border-color: #00ff9d !important;
+}
+
+.cyber-input .MuiInputLabel-root {
+  color: #00ff9d !important;
+}
+
+.cyber-input input {
+  color: #ffffff !important;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.unit-button {
+  background-color: transparent !important;
+  border: 1px solid #00ff9d !important;
+  color: #00ff9d !important;
+  min-width: 60px !important;
+  height: 56px !important;
+}
+
+.unit-button:hover {
+  background-color: rgba(0, 255, 157, 0.1) !important;
+} 
