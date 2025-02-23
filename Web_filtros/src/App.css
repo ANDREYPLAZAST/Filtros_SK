@@ -15,29 +15,495 @@
   box-sizing: border-box;
 }
 
-body, html {
+html, body {
   width: 100%;
-  height: 100%;
+  height: 100vh;
+}
+
+#root, 
+body, 
+html, 
+.main-container, 
+.app-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
   overflow-x: hidden;
 }
 
-:root {
-  --primary-light: #1a8870;
-  --primary-dark: #00ff9d;
-  --bg-light: #ffffff;
-  --bg-dark: #0a0a0a;
-  --text-light: #1a1a1a;
-  --text-dark: #ffffff;
-}
-
+/* Contenedor principal */
 .main-container {
   min-height: 100vh;
-  width: 100vw;
   display: flex;
   flex-direction: column;
-  background: var(--bg-dark);
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
   color: var(--text-dark);
-  overflow-x: hidden;
+}
+
+/* Header */
+.MuiAppBar-root {
+  background: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--primary-dark);
+}
+
+.header-container {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border-bottom: 1px solid rgba(0, 255, 157, 0.2);
+  box-shadow: none !important;
+  margin-bottom: 1rem;
+}
+
+.header-title {
+  font-size: 2.5rem !important;
+  font-weight: 700 !important;
+  color: var(--primary-dark) !important;
+  text-align: center !important;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  text-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
+  animation: glow 2s infinite alternate;
+}
+
+/* Contenedor de la aplicación */
+.app-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem;
+  gap: 1.5rem;
+  height: auto;
+}
+
+/* Tabs container */
+.tabs-container {
+  width: 100%;
+  max-width: none;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  display: flex;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+/* Tabs */
+.cyber-tabs {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Contenedor de los tabs */
+.MuiTabs-flexContainer {
+  width: 100%;
+  display: flex !important;
+  justify-content: space-around !important;
+  align-items: center !important;
+  padding: 0.3rem !important;
+  gap: 0.5rem;
+}
+
+.cyber-tabs .MuiTab-root {
+  flex: 1;
+  max-width: none !important;
+  color: var(--text-dark) !important;
+  font-weight: 600;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  padding: 0.3rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+  min-height: 35px;
+  line-height: 1;
+}
+
+/* Estilo específico para el tab de RECHAZA BANDA */
+.cyber-tabs .MuiTab-root[label="RECHAZA BANDA"] {
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+}
+
+.cyber-tabs .Mui-selected {
+  color: var(--primary-dark) !important;
+  background: rgba(0, 255, 157, 0.1);
+  border-radius: 6px;
+}
+
+.cyber-tabs .MuiTabs-indicator {
+  background-color: var(--primary-dark);
+  height: 2px;
+  border-radius: 2px;
+}
+
+/* Contenedor principal del filtro */
+.filter-container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  overflow: hidden;
+}
+
+/* Columna izquierda - Información */
+.info-column {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 2rem;
+  height: fit-content;
+}
+
+.parameter-info h3,
+.equation-title {
+  color: var(--primary-dark);
+  font-size: 1.4rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.parameter-info p {
+  color: var(--text-dark);
+  margin-bottom: 1rem;
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.parameter-info strong {
+  color: var(--primary-dark);
+}
+
+/* Columna derecha - Inputs */
+.input-section {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.input-grid {
+  margin-bottom: 2rem !important;
+}
+
+.input-field-container {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 157, 0.2);
+}
+
+/* Estilos para los inputs */
+.cyber-input {
+  background: transparent !important;
+}
+
+.cyber-input .MuiOutlinedInput-root {
+  background: transparent;
+}
+
+.cyber-input .MuiOutlinedInput-notchedOutline {
+  border-color: var(--primary-dark);
+}
+
+.cyber-input input {
+  color: var(--text-dark) !important;
+  font-size: 1.1rem;
+}
+
+.cyber-input label {
+  color: var(--primary-dark) !important;
+  font-size: 1rem;
+}
+
+/* Botones de unidad */
+.unit-button {
+  min-width: 60px !important;
+  height: 56px !important;
+  background: rgba(0, 255, 157, 0.1) !important;
+  border: 1px solid var(--primary-dark) !important;
+  color: var(--primary-dark) !important;
+  font-weight: 600 !important;
+}
+
+.unit-button:hover {
+  background: rgba(0, 255, 157, 0.2) !important;
+}
+
+/* Botón calcular */
+.calculate-button {
+  width: 100%;
+  padding: 1rem !important;
+  font-size: 1.2rem !important;
+  background: linear-gradient(45deg, var(--primary-dark), #00cc7d) !important;
+  color: black !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  margin-top: 1rem !important;
+}
+
+.calculate-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(0, 255, 157, 0.3) !important;
+}
+
+/* Modo claro */
+.light .input-field-container {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(26, 136, 112, 0.2);
+}
+
+.light .cyber-input input {
+  color: var(--text-light) !important;
+}
+
+.light .cyber-input label {
+  color: var(--primary-light) !important;
+}
+
+.light .unit-button {
+  background: rgba(26, 136, 112, 0.1) !important;
+  border-color: var(--primary-light) !important;
+  color: var(--primary-light) !important;
+}
+
+/* Resultados - inicialmente ocultos */
+.results-section {
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Resultados - visibles después de calcular */
+.results-section.visible {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  opacity: 1;
+}
+
+/* Cuando hay resultados, ajustar el contenedor principal */
+.filter-container.has-results {
+  height: auto;
+  overflow: visible;
+  min-height: 0;
+}
+
+.circuit-diagram {
+  grid-column: span 2;
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.circuit-diagram img {
+  filter: brightness(0) invert(1);
+  max-width: 100%;
+  height: auto;
+}
+
+.results-values {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.bode-plot {
+  grid-column: span 2;
+  height: 350px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+/* Modo claro */
+.light .info-column,
+.light .input-section,
+.light .results-values {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(26, 136, 112, 0.2);
+}
+
+.light .parameter-info h3,
+.light .equation-title {
+  color: var(--primary-light);
+}
+
+.light .parameter-info p,
+.light .equation {
+  color: var(--text-light);
+}
+
+.light .circuit-diagram img {
+  filter: none;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .filter-container {
+    grid-template-columns: 1fr;
+  }
+
+  .results-section {
+    grid-template-columns: 1fr;
+  }
+
+  .circuit-diagram,
+  .bode-plot {
+    grid-column: span 1;
+  }
+}
+
+/* Scrollbar personalizada */
+.app-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.app-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.app-container::-webkit-scrollbar-thumb {
+  background: var(--primary-dark);
+  border-radius: 4px;
+}
+
+/* Modo claro/día */
+.main-container.light {
+  background: linear-gradient(135deg, #f0f0f0 0%, #ffffff 100%);
+  color: var(--text-light);
+}
+
+.light .MuiAppBar-root {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid var(--primary-light);
+}
+
+.light .header-title {
+  color: var(--primary-light) !important;
+  text-shadow: 0 0 10px rgba(26, 136, 112, 0.5);
+}
+
+.light .tabs-container {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(26, 136, 112, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.light .cyber-tabs .MuiTab-root {
+  color: #333 !important;
+}
+
+.light .cyber-tabs .Mui-selected {
+  color: var(--primary-light) !important;
+  background: rgba(26, 136, 112, 0.1);
+}
+
+.light .cyber-tabs .MuiTabs-indicator {
+  background-color: var(--primary-light);
+}
+
+.light .filter-container {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(26, 136, 112, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.light .input-section {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(26, 136, 112, 0.2);
+}
+
+.light .input-section-title {
+  color: var(--primary-light);
+}
+
+.light .cyber-input {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(26, 136, 112, 0.3);
+}
+
+.light .cyber-input input {
+  color: #333 !important;
+}
+
+.light .cyber-input label {
+  color: var(--primary-light) !important;
+}
+
+.light .cyber-button {
+  background: var(--primary-light) !important;
+  color: white !important;
+}
+
+.light .cyber-button:hover {
+  box-shadow: 0 4px 12px rgba(26, 136, 112, 0.3) !important;
+}
+
+.light .results-section {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(26, 136, 112, 0.2);
+}
+
+.light .results-title {
+  color: var(--primary-light);
+}
+
+.light .transfer-function {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(26, 136, 112, 0.2);
+}
+
+.light .transfer-function-title {
+  color: var(--primary-light);
+}
+
+.light .transfer-function-equation {
+  color: #333;
+}
+
+.light .circuit-diagram img {
+  filter: none;
+}
+
+.light .bode-plot {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(26, 136, 112, 0.2);
+}
+
+/* Scrollbar en modo claro */
+.light .app-container::-webkit-scrollbar-track {
+  background: rgba(26, 136, 112, 0.1);
+}
+
+.light .app-container::-webkit-scrollbar-thumb {
+  background: var(--primary-light);
+}
+
+/* Animaciones */
+@keyframes glow {
+  0% { text-shadow: 0 0 10px rgba(0, 255, 157, 0.5); }
+  50% { text-shadow: 0 0 20px rgba(0, 255, 157, 0.7); }
+  100% { text-shadow: 0 0 10px rgba(0, 255, 157, 0.5); }
+}
+
+.dark {
+  background-color: #121212;
+  color: white;
+}
+
+.light {
+  background-color: #ffffff;
+  color: black;
+}
+
+.app-container {
+  padding-top: 20px;
 }
 
 .main-container.dark {
@@ -92,46 +558,14 @@ body, html {
   color: white !important;
 }
 
-.app-container {
-  flex: 1;
-  width: 100%;
-  max-width: 100vw;
-  padding: 0 2rem;
-  display: flex;
-  flex-direction: column;
-}
-
-.header-container {
-  width: 100%;
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.3);
-}
-
 .content-container {
   flex: 1;
   display: flex;
   flex-direction: column;
   padding: 2rem 0;
-  width: 100%;
-  max-width: 1200px;
+  width: 100% !important;
+  max-width: none !important;
   margin: 0 auto;
-}
-
-.tabs-container {
-  width: 100%;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 0.5rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-}
-
-.filter-container {
-  flex: 1;
-  width: 100%;
-  padding: 0 1rem;
 }
 
 .cyber-paper {
@@ -321,13 +755,22 @@ body, html {
   color: var(--text-light);
 }
 
-@media (max-width: 600px) {
-  .title-glow {
-    font-size: 2rem !important;
+@media (max-width: 768px) {
+  .header-title {
+    font-size: 1.8rem !important;
   }
-  
-  .main-container {
+
+  .app-container {
     padding: 1rem;
+  }
+
+  .filter-container {
+    padding: 1.2rem;
+  }
+
+  .cyber-tabs .MuiTab-root {
+    font-size: 0.9rem;
+    padding: 0.6rem 1rem;
   }
 }
 
@@ -386,4 +829,88 @@ body, html {
 
 .light .bode-plot {
   background: rgba(0, 0, 0, 0.05);
+}
+
+/* Parámetros de entrada */
+.input-section {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(0, 255, 157, 0.2);
+}
+
+.input-section-title {
+  color: var(--primary-dark);
+  font-size: 1.3rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+/* Esquemático del filtro */
+.circuit-diagram {
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.circuit-diagram img {
+  filter: brightness(0) invert(1);
+  max-width: 100%;
+  height: auto;
+}
+
+/* Función de transferencia */
+.transfer-function {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.transfer-function-title {
+  color: var(--primary-dark);
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+}
+
+.transfer-function-equation {
+  color: white;
+  font-size: 1.2rem;
+  font-family: 'Computer Modern', serif;
+  margin: 1rem 0;
+}
+
+/* Resultados */
+.results-section {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.results-title {
+  color: var(--primary-dark);
+  font-size: 1.3rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Diagrama de Bode */
+.bode-plot {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  height: 350px;
+}
+
+/* Ajuste para modo claro */
+.light .header-container {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid rgba(26, 136, 112, 0.2);
+}
+
+.light .header-title {
+  color: var(--primary-light) !important;
+  text-shadow: 0 0 10px rgba(26, 136, 112, 0.3);
 } 

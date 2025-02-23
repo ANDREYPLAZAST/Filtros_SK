@@ -1,0 +1,184 @@
+/* Contenedor principal del filtro */
+.filter-container {
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%; /* Cambiado a 100% */
+  margin: 0.2rem; /* Reducido el margen */
+  min-height: 10px;
+}
+
+/* Eliminar todos los estilos de fondo y bordes de los contenedores internos */
+.filter-section,
+.filter-description,
+.filter-inputs,
+.input-field {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Contenedor para cada sección dentro del filtro */
+.filter-section {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-height: 200px;
+}
+
+/* Descripción del filtro */
+.filter-description {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.filter-description h3 {
+  color: var(--primary-dark);
+  font-size: 1.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.parameter {
+  margin-bottom: 1.5rem;
+}
+
+.parameter h4 {
+  color: var(--primary-dark);
+  margin-bottom: 0.5rem;
+}
+
+.parameter p {
+  color: var(--text-dark);
+  line-height: 1.5;
+}
+
+.equations {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.equation {
+  color: white;
+  font-family: 'Computer Modern', serif;
+  margin: 1rem 0;
+  text-align: center;
+}
+
+/* Inputs del filtro */
+.filter-inputs {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 2.5rem;
+  width: 100%;
+}
+
+.input-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.input-field {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 157, 0.2);
+  width: 100%;
+}
+
+.input-field .MuiTextField-root {
+  flex: 1;
+}
+
+.input-field .MuiTextField-root .MuiInputBase-root {
+  height: 56px;
+  font-size: 1.1rem;
+}
+
+.input-field button {
+  min-width: 80px;
+  height: 56px;
+  font-size: 1.1rem;
+}
+
+.calculate-button {
+  width: 100%;
+  height: 60px;
+  font-size: 1.3rem;
+  background: linear-gradient(45deg, var(--primary-dark), #00cc7d);
+  color: black;
+  font-weight: 600;
+  text-transform: none;
+  margin-top: 2rem;
+}
+
+/* Modo claro - también transparente */
+.light .filter-description,
+.light .filter-inputs,
+.light .input-field {
+  background: transparent !important;
+  border: none !important;
+}
+
+.light .input-field {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(26, 136, 112, 0.2);
+}
+
+.light .parameter h4,
+.light .filter-description h3 {
+  color: var(--primary-light);
+}
+
+.light .parameter p,
+.light .equation {
+  color: var(--text-light);
+}
+
+/* Media queries para responsividad */
+@media (max-width: 1600px) {
+  .filter-container {
+    width: 98%;
+    padding: 2rem;
+  }
+  
+  .filter-section {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 1400px) {
+  .input-group {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1200px) {
+  .filter-container {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  .input-group {
+    max-width: 900px;
+    margin: 0 auto 2rem auto;
+  }
+}
+
+/* Eliminar restricciones de Container de Material-UI si lo estás usando */
+.MuiContainer-root {
+  max-width: none !important;
+  padding: 0 !important;
+} 

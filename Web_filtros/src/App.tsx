@@ -17,10 +17,10 @@ function App() {
   };
 
   return (
-    <Box className={`main-container ${darkMode ? 'dark' : 'light'}`}>
+    <div className={`main-container ${darkMode ? 'dark' : 'light'}`}>
       <Header darkMode={darkMode} onThemeChange={handleThemeChange} />
       
-      <Container maxWidth="lg" className="app-container">
+      <div className="app-container">
         <Box className="tabs-container">
           <Tabs 
             value={currentFilter} 
@@ -38,8 +38,8 @@ function App() {
         <Box className="filter-container">
           {currentFilter === 0 && <PasaBandaFilter />}
         </Box>
-      </Container>
-    </Box>
+      </div>
+    </div>
   );
 }
 
