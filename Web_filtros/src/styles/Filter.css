@@ -2,6 +2,7 @@
 .filter-container {
   display: flex;
   flex-direction: column;
+  gap: 2rem;
   padding: 2rem;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 20px;
@@ -193,18 +194,139 @@
   border-radius: 12px;
 }
 
-/* Títulos de sección */
+/* Títulos de sección - color fijo para ambos modos */
 .section-title {
-  color: var(--primary-dark);
   font-size: 1.5rem !important;
   font-weight: 600 !important;
-  margin-bottom: 2rem !important;
+  margin-bottom: 2.5rem !important;
   text-align: center;
+  color: #00ff9d !important;
+}
+
+/* Eliminar estas reglas que están causando conflicto */
+.dark .section-title,
+.light .section-title {
+  color: #00ff9d !important;
+}
+
+/* Eliminar estas reglas que están sobreescribiendo */
+.light .section-title {
+  color: #00ff9d !important;
+}
+
+/* Asegurar que los títulos siempre sean verdes */
+.description-box .section-title,
+.parameters-box .section-title {
+  color: #00ff9d !important;
+}
+
+.dark .cyber-input .MuiOutlinedInput-input {
+  color: white !important;
+}
+
+.dark .cyber-input .MuiInputLabel-root {
+  color: var(--primary-dark) !important;
+}
+
+.dark .parameter-info h4 {
+  color: var(--primary-dark) !important;
 }
 
 /* Modo claro */
 .light .section-title {
-  color: var(--primary-light);
+  color: var(--primary-light) !important;
+}
+
+.light .cyber-input .MuiOutlinedInput-input {
+  color: black !important;
+}
+
+.light .cyber-input .MuiInputLabel-root {
+  color: var(--primary-light) !important;
+}
+
+.light .parameter-info h4 {
+  color: var(--primary-light) !important;
+}
+
+/* Input field container para modo claro */
+.light .input-field-container {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--primary-light);
+}
+
+/* Unit select para modo claro */
+.light .unit-select {
+  color: black !important;
+  background: rgba(26, 136, 112, 0.1);
+  border-color: var(--primary-light);
+}
+
+.light .MuiSelect-select {
+  color: black !important;
+}
+
+/* Descripción de parámetros */
+.parameter-info h4 {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.dark .parameter-info p {
+  color: white !important;
+}
+
+.light .parameter-info p {
+  color: black !important;
+}
+
+/* Input styling para modo oscuro */
+.dark .cyber-input .MuiOutlinedInput-input {
+  color: var(--text-dark) !important;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Input styling para modo claro - aumentando especificidad */
+.light .cyber-input .MuiOutlinedInput-root .MuiOutlinedInput-input,
+.light .MuiOutlinedInput-root .MuiInputBase-input {
+  color: black !important;
+}
+
+/* Para los selects en modo claro */
+.light .MuiSelect-select {
+  color: black !important;
+}
+
+/* Para asegurar que todos los inputs en modo claro tengan texto negro */
+.light .MuiInputBase-input {
+  color: black !important;
+}
+
+/* Asegurar que el texto es negro incluso cuando el input está enfocado */
+.light .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-input {
+  color: black !important;
+}
+
+/* Eliminar cualquier estilo que pueda estar sobreescribiendo */
+.cyber-input .MuiOutlinedInput-input {
+  color: inherit !important;
+}
+
+/* Asegurar que los números sean legibles en ambos modos */
+.cyber-input input[type="number"] {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+}
+
+/* Quitar flechas de los inputs numéricos */
+.cyber-input input[type="number"]::-webkit-inner-spin-button,
+.cyber-input input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.cyber-input input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 /* Input containers */
@@ -269,37 +391,38 @@
   color: var(--primary-light) !important;
 }
 
-/* Unit select para modo claro */
-.light .unit-select {
-  color: black !important;
-  background: rgba(26, 136, 112, 0.1);
-  border-color: var(--primary-light);
-}
-
-.light .MuiSelect-select {
-  color: black !important;
-}
-
-/* Input field container para modo claro */
-.light .input-field-container {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: var(--primary-light);
+/* Grid container para inputs */
+.input-grid-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
 }
 
 /* Sección de resultados */
 .results-section {
-  margin-top: 3rem;
+  margin-top: 4rem; /* Más espacio arriba */
   padding: 2rem;
   background: rgba(0, 0, 0, 0.2);
   border-radius: 12px;
   border: 1px solid rgba(0, 255, 157, 0.2);
+  width: 100%;
 }
 
 .result-box {
   background: rgba(0, 0, 0, 0.3);
-  padding: 1.5rem;
+  padding: 2rem;
   border-radius: 8px;
   border: 1px solid rgba(0, 255, 157, 0.2);
+  margin-bottom: 1rem;
+  height: 100%;
+}
+
+/* Separador visual */
+.results-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(0, 255, 157, 0.2);
+  margin: 2rem 0;
 }
 
 .result-item {
@@ -345,4 +468,74 @@
 
 .light .result-item span:last-child {
   color: var(--text-light);
+}
+
+/* Eliminar estas clases que estaban ocultando los resultados */
+.results-section.visible {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  opacity: 1;
+}
+
+.filter-container.has-results {
+  height: auto;
+  overflow: visible;
+  min-height: 0;
+}
+
+/* Contenedor de resultados */
+.results-container {
+  width: 100%;
+  margin-top: 2rem;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.4); /* Fondo más oscuro */
+  border-radius: 20px;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(0, 255, 157, 0.2);
+}
+
+/* Imagen del circuito */
+.circuit-image {
+  width: 100%;
+  max-width: 900px; /* Aumentado más el tamaño máximo */
+  margin: 2rem auto;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.95); /* Fondo más blanco */
+  padding: 2rem; /* Más padding */
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2); /* Añadida sombra */
+}
+
+.circuit-image img {
+  width: 100%;
+  height: auto;
+  filter: none;
+  max-height: 400px; /* Altura máxima */
+  object-fit: contain; /* Mantener proporción */
+}
+
+/* Modo oscuro específico */
+.dark .circuit-image {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 255, 157, 0.2);
+}
+
+.dark .circuit-image img {
+  filter: none;
+}
+
+/* Modo claro */
+.light .circuit-image {
+  background: white;
+  border: 1px solid rgba(26, 136, 112, 0.2);
+}
+
+.light .circuit-image img {
+  filter: none;
+}
+
+.light .results-container {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(26, 136, 112, 0.2);
 } 
