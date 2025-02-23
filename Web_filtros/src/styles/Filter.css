@@ -7,9 +7,9 @@
   border-radius: 20px;
   backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  width: 100%; /* Cambiado a 100% */
-  margin: 0.2rem; /* Reducido el margen */
-  min-height: 10px;
+  width: 100%;
+  margin: 0;
+  min-height: 800px;
 }
 
 /* Eliminar todos los estilos de fondo y bordes de los contenedores internos */
@@ -181,4 +181,168 @@
 .MuiContainer-root {
   max-width: none !important;
   padding: 0 !important;
+}
+
+/* Cajas de contenido */
+.description-box,
+.parameters-box {
+  background: transparent;
+  padding: 2rem;
+  height: 100%;
+  min-height: 400px;
+  border-radius: 12px;
+}
+
+/* Títulos de sección */
+.section-title {
+  color: var(--primary-dark);
+  font-size: 1.5rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 2rem !important;
+  text-align: center;
+}
+
+/* Modo claro */
+.light .section-title {
+  color: var(--primary-light);
+}
+
+/* Input containers */
+.input-field-container {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 157, 0.2);
+  margin-bottom: 1rem;
+}
+
+/* Input styling */
+.cyber-input {
+  background: transparent !important;
+}
+
+.cyber-input .MuiOutlinedInput-root {
+  color: var(--text-dark);
+}
+
+/* Unit select */
+.unit-select {
+  min-width: 80px !important;
+  height: 56px;
+  background: rgba(0, 255, 157, 0.1);
+  border: 1px solid var(--primary-dark);
+  color: var(--primary-dark);
+  border-radius: 4px;
+}
+
+/* Calculate button */
+.calculate-button {
+  width: 100%;
+  margin-top: 2rem !important;
+  padding: 1rem !important;
+  font-size: 1.2rem !important;
+  background: linear-gradient(45deg, var(--primary-dark), #00cc7d) !important;
+  color: black !important;
+  font-weight: 600 !important;
+}
+
+/* Input styling para modo oscuro */
+.cyber-input .MuiOutlinedInput-input {
+  color: var(--text-dark) !important;
+}
+
+.cyber-input .MuiInputLabel-root {
+  color: var(--primary-dark) !important;
+}
+
+/* Input styling para modo claro */
+.light .cyber-input .MuiOutlinedInput-input,
+.light .MuiOutlinedInput-root input {
+  color: black !important;
+}
+
+.light .cyber-input .MuiInputLabel-root,
+.light .MuiInputLabel-root {
+  color: var(--primary-light) !important;
+}
+
+/* Unit select para modo claro */
+.light .unit-select {
+  color: black !important;
+  background: rgba(26, 136, 112, 0.1);
+  border-color: var(--primary-light);
+}
+
+.light .MuiSelect-select {
+  color: black !important;
+}
+
+/* Input field container para modo claro */
+.light .input-field-container {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--primary-light);
+}
+
+/* Sección de resultados */
+.results-section {
+  margin-top: 3rem;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 255, 157, 0.2);
+}
+
+.result-box {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 157, 0.2);
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.result-item:last-child {
+  border-bottom: none;
+}
+
+.result-item span:first-child {
+  color: var(--primary-dark);
+  font-weight: 500;
+}
+
+.result-item span:last-child {
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+/* Modo claro para resultados */
+.light .results-section {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(26, 136, 112, 0.2);
+}
+
+.light .result-box {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(26, 136, 112, 0.2);
+}
+
+.light .result-item {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+
+.light .result-item span:first-child {
+  color: var(--primary-light);
+}
+
+.light .result-item span:last-child {
+  color: var(--text-light);
 } 
