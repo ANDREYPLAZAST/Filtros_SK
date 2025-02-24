@@ -538,4 +538,60 @@
 .light .results-container {
   background: rgba(255, 255, 255, 0.9);
   border-color: rgba(26, 136, 112, 0.2);
+}
+
+/* Estilos para la información de parámetros */
+.parameter-info {
+  padding: 1rem;
+  background: rgba(0, 255, 157, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 157, 0.1);
+}
+
+.parameter-info h4 {
+  color: var(--primary-dark);
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.parameter-info p {
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+  opacity: 0.9;
+}
+
+.design-notes {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.design-notes ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.design-notes li {
+  margin-bottom: 0.8rem;
+  padding-left: 1.5rem;
+  position: relative;
+}
+
+.design-notes li:before {
+  content: "•";
+  color: var(--primary-dark);
+  position: absolute;
+  left: 0;
+}
+
+/* Ajustes para modo claro */
+.light .parameter-info {
+  background: rgba(26, 136, 112, 0.05);
+  border-color: rgba(26, 136, 112, 0.1);
+}
+
+.light .design-notes {
+  background: rgba(26, 136, 112, 0.1);
 } 

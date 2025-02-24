@@ -136,16 +136,28 @@ export const PasaBandaFilter = () => {
             </Typography>
             <div className="parameter-info">
               <h4>Frecuencia central (fo):</h4>
-              <p>Frecuencia donde la ganancia es máxima</p>
+              <p>Frecuencia donde la ganancia es máxima. Es el punto medio del ancho de banda y determina la frecuencia de operación principal del filtro.</p>
               
               <h4>Ancho de banda (BW):</h4>
-              <p>Diferencia entre frecuencias de corte superior e inferior</p>
+              <p>Diferencia entre frecuencias de corte superior e inferior. Define el rango de frecuencias donde el filtro opera efectivamente (f2 - f1). A menor BW, más selectivo es el filtro.</p>
               
               <h4>Ganancia (A):</h4>
-              <p>Amplificación máxima en la frecuencia central</p>
+              <p>Amplificación máxima en la frecuencia central, expresada en decibelios (dB). Determina cuánto se amplifica la señal en la banda de paso. Un valor típico es entre 1 y 100 dB.</p>
               
               <h4>Capacitor (C):</h4>
-              <p>Valor del capacitor de referencia para el diseño</p>
+              <p>Valor del capacitor de referencia para el diseño. Se recomienda usar valores comerciales entre 100pF y 100nF para frecuencias altas, y entre 100nF y 10µF para frecuencias bajas.</p>
+
+              <h4>Resistencia Ra:</h4>
+              <p>Resistencia de entrada del circuito. Afecta la impedancia de entrada y la ganancia total. Se recomienda usar valores entre 1kΩ y 100kΩ.</p>
+
+              <div className="design-notes">
+                <h4>Notas de diseño:</h4>
+                <ul>
+                  <li>El factor de calidad Q = f₀/BW determina la selectividad del filtro</li>
+                  <li>Las frecuencias de corte f₁ y f₂ se definen a -3dB de la ganancia máxima</li>
+                  <li>Para un mejor diseño, se recomienda que BW sea menor que f₀</li>
+                </ul>
+              </div>
             </div>
           </Box>
         </Grid>
@@ -306,7 +318,7 @@ export const PasaBandaFilter = () => {
                   <span>{results.n}</span>
                 </div>
                 <div className="result-item">
-                  <span>Resistencia R:</span>
+                  <span>Resistencia nR:</span>
                   <span>{results.R}</span>
                 </div>
                 <div className="result-item">
