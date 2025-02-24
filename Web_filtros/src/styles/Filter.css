@@ -581,17 +581,90 @@
 
 .design-notes li:before {
   content: "•";
-  color: var(--primary-dark);
   position: absolute;
   left: 0;
 }
 
+/* Modo oscuro */
+.dark .parameter-info p,
+.dark .parameter-info h4,
+.dark .design-notes li {
+  color: white !important;
+}
+
+/* Modo claro */
+.light .parameter-info p,
+.light .parameter-info h4,
+.light .design-notes li {
+  color: black !important;
+}
+
 /* Ajustes para modo claro */
+.light .design-notes {
+  background: rgba(26, 136, 112, 0.1);
+}
+
 .light .parameter-info {
   background: rgba(26, 136, 112, 0.05);
   border-color: rgba(26, 136, 112, 0.1);
 }
 
+/* Switch de modo de cálculo */
+.calculation-mode-switch {
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(0, 255, 157, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 255, 157, 0.1);
+  display: flex;
+  justify-content: center;
+}
+
+.calculation-mode-switch .MuiFormControlLabel-root {
+  margin: 0;
+}
+
+.calculation-mode-switch .MuiSwitch-root {
+  margin-right: 1rem;
+}
+
+/* Modo claro - texto negro */
+.light .parameter-info p,
+.light .parameter-info h4,
+.light .design-notes li,
+.light .parameter-info .design-notes li:before {
+  color: black !important;
+}
+
+/* Modo claro - títulos y subtítulos */
+.light .parameter-info h4,
+.light .design-notes h4 {
+  color: var(--primary-light) !important;
+}
+
+/* Modo claro - texto descriptivo */
+.light .parameter-info p {
+  color: rgba(0, 0, 0, 0.87) !important;
+}
+
+/* Modo claro - puntos de lista */
+.light .design-notes li:before {
+  color: var(--primary-light) !important;
+}
+
+/* Modo claro - texto de las notas */
+.light .design-notes li {
+  color: rgba(0, 0, 0, 0.87) !important;
+}
+
+/* Modo claro - fondo más claro */
+.light .parameter-info,
 .light .design-notes {
-  background: rgba(26, 136, 112, 0.1);
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(26, 136, 112, 0.2);
+}
+
+/* Asegurar que los switches tengan texto negro en modo claro */
+.light .calculation-mode-switch .MuiFormControlLabel-label {
+  color: black !important;
 } 
