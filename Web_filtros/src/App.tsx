@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { Box, Container, Tab, Tabs } from '@mui/material';
 import { Header } from './components/Header';
 import { PasaBandaFilter } from './components/PasaBandaFilter';
+import { PasaBajosFilter } from './components/PasaBajosFilter';
+import { PasaAltosFilter } from './components/PasaAltosFilter';
+import { RechazaBandaFilter } from './components/RechazaBandaFilter';
 import './App.css';
 
 function App() {
@@ -37,6 +40,9 @@ function App() {
 
         <Box className="filter-container">
           {currentFilter === 0 && <PasaBandaFilter />}
+          {currentFilter === 1 && <PasaBajosFilter />}
+          {currentFilter === 2 && <PasaAltosFilter />}
+          {currentFilter === 3 && <RechazaBandaFilter />}
         </Box>
       </div>
     </div>
