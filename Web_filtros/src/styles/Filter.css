@@ -409,12 +409,11 @@
 }
 
 .result-box {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
   padding: 2rem;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid rgba(0, 255, 157, 0.2);
-  margin-bottom: 1rem;
-  height: 100%;
+  margin-bottom: 2rem;
 }
 
 /* Separador visual */
@@ -429,8 +428,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.8rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-bottom: 1px solid rgba(0, 255, 157, 0.1);
+  font-size: 1.1rem;
 }
 
 .result-item:last-child {
@@ -443,8 +443,8 @@
 }
 
 .result-item span:last-child {
-  color: var(--text-dark);
   font-weight: 600;
+  color: white;
 }
 
 /* Modo claro para resultados */
@@ -454,20 +454,16 @@
 }
 
 .light .result-box {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.9);
   border-color: rgba(26, 136, 112, 0.2);
 }
 
 .light .result-item {
-  border-bottom-color: rgba(0, 0, 0, 0.1);
-}
-
-.light .result-item span:first-child {
-  color: var(--primary-light);
+  border-bottom-color: rgba(26, 136, 112, 0.1);
 }
 
 .light .result-item span:last-child {
-  color: var(--text-light);
+  color: black;
 }
 
 /* Eliminar estas clases que estaban ocultando los resultados */
@@ -667,4 +663,238 @@
 /* Asegurar que los switches tengan texto negro en modo claro */
 .light .calculation-mode-switch .MuiFormControlLabel-label {
   color: black !important;
+}
+
+/* Contenedor de imágenes */
+.images-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  margin: 2rem 0 4rem 0; /* Aumentar margen inferior */
+  height: 380px; /* Reducir un poco la altura */
+}
+
+.circuit-image,
+.bode-plot {
+  flex: 1;
+  height: 100%; /* Toma toda la altura del contenedor */
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; /* Para evitar desbordamiento */
+}
+
+.circuit-image img {
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.bode-plot {
+  min-height: 100%; /* Asegura altura mínima igual a la imagen */
+  padding: 1rem;
+}
+
+/* Ajustar el canvas del gráfico para que tome todo el espacio disponible */
+.bode-plot canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Modo oscuro */
+.dark .circuit-image,
+.dark .bode-plot {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 255, 157, 0.2);
+}
+
+/* Modo claro */
+.light .circuit-image,
+.light .bode-plot {
+  background: white;
+  border: 1px solid rgba(26, 136, 112, 0.2);
+}
+
+.bode-plot {
+  flex: 1;
+  height: 400px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Modo oscuro */
+.dark .bode-plot {
+  background: rgba(26, 26, 26, 0.9);
+}
+
+/* Modo claro */
+.light .bode-plot {
+  background: white;
+}
+
+/* Estilos para los valores de resistencia */
+.result-value-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Valores en modo oscuro */
+.result-value-with-unit span,
+.dark .result-value-with-unit span {
+  color: #ffffff !important; /* Blanco puro para modo oscuro */
+}
+
+/* Valores en modo claro */
+.light .result-value-with-unit span:first-of-type {
+  color: #000000 !important; /* Negro puro para modo claro */
+}
+
+/* Ajustar el select en modo oscuro */
+.dark .unit-select-small {
+  background: rgba(0, 255, 157, 0.1);
+  border-color: var(--primary-dark);
+  color: #ffffff;
+}
+
+.dark .unit-select-small .MuiSelect-select {
+  color: #ffffff !important;
+}
+
+/* Mantener los estilos del modo claro */
+.light .unit-select-small {
+  background: rgba(26, 136, 112, 0.1);
+  border-color: var(--primary-light);
+  color: #000000;
+}
+
+.light .unit-select-small .MuiSelect-select {
+  color: #000000 !important;
+}
+
+.transfer-function {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2.5rem;
+  border-radius: 12px;
+  text-align: center;
+  margin: 1rem 0;
+  border: 1px solid rgba(0, 255, 157, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.transfer-function.calculated {
+  background: rgba(0, 255, 157, 0.1);
+  margin-top: 2rem;
+}
+
+/* Estilos para las fórmulas matemáticas */
+.transfer-function .MathJax {
+  font-size: 1.4rem !important;
+  color: white;
+}
+
+/* Modo claro */
+.light .transfer-function {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(26, 136, 112, 0.2);
+}
+
+.light .transfer-function.calculated {
+  background: rgba(26, 136, 112, 0.1);
+}
+
+.light .transfer-function .MathJax {
+  color: black;
+}
+
+/* Títulos de secciones */
+.section-title {
+  font-size: 1.8rem !important;
+  margin-bottom: 3rem !important;
+  text-align: center;
+  color: var(--primary-dark) !important;
+  text-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
+}
+
+/* Subtítulos en modo oscuro */
+.result-box .MuiTypography-h6 {
+  font-size: 1.4rem !important;
+  margin-bottom: 1.5rem !important;
+  color: var(--primary-dark) !important;
+}
+
+/* Subtítulos en modo claro - más oscuros */
+.light .result-box .MuiTypography-h6 {
+  color: #0a5344 !important; /* Verde más oscuro para mejor legibilidad */
+}
+
+/* Títulos de secciones en modo claro */
+.light .section-title {
+  color: #0a5344 !important;
+  text-shadow: none; /* Quitar el shadow en modo claro para mejor legibilidad */
+}
+
+/* Mantener el color original en modo oscuro */
+.dark .result-box .MuiTypography-h6,
+.dark .section-title {
+  color: var(--primary-dark) !important;
+  text-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
+}
+
+/* Ajustes para el diagrama de Bode en modo oscuro */
+.dark .bode-plot {
+  background: rgba(26, 26, 26, 0.9);
+  color: white;
+}
+
+.dark .bode-plot canvas {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+/* Títulos principales en modo oscuro */
+.description-box .MuiTypography-root,
+.parameters-box .MuiTypography-root {
+  color: #00ff9d !important;
+}
+
+/* Títulos principales en modo claro - verde más oscuro */
+.light .description-box .MuiTypography-root,
+.light .parameters-box .MuiTypography-root {
+  color: #0a5344 !important; /* Verde más oscuro */
+  text-shadow: none; /* Quitar el shadow para mejor legibilidad */
+}
+
+/* Mantener el estilo original en modo oscuro */
+.dark .description-box .MuiTypography-root,
+.dark .parameters-box .MuiTypography-root {
+  color: #00ff9d !important;
+  text-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
+}
+
+/* Título principal de resultados */
+.section-title {
+  font-size: 1.8rem !important;
+  margin-bottom: 3rem !important;
+  text-align: center;
+  color: var(--primary-dark) !important;
+  text-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
+}
+
+/* Título principal de resultados en modo claro */
+.light .results-container .section-title {
+  color: #0a5344 !important; /* El mismo verde oscuro que los otros títulos */
+  text-shadow: none;
+}
+
+/* Mantener el estilo en modo oscuro */
+.dark .results-container .section-title {
+  color: #00ff9d !important;
+  text-shadow: 0 0 10px rgba(0, 255, 157, 0.2);
 } 
