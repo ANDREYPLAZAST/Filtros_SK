@@ -15,6 +15,8 @@ import {
   LogarithmicScale
 } from 'chart.js';
 import { MathJax, MathJaxContext } from 'better-react-mathjax';
+import circuitImageBasic from '../assets/PASABANDA.png';
+import circuitImageWithValues from '../assets/PASABANDA2.png';
 
 // Registrar los componentes necesarios de Chart.js
 ChartJS.register(
@@ -379,6 +381,14 @@ export const PasaBandaFilter = () => {
                     <li>Para un mejor diseño, se recomienda que BW sea menor que f₀</li>
                   </ul>
                 </div>
+
+                <div className="circuit-preview basic-circuit">
+                  <img 
+                    src={circuitImageBasic}
+                    alt="Circuito Pasa Banda Básico"
+                    className="circuit-diagram-preview"
+                  />
+                </div>
               </div>
             </Box>
           </Grid>
@@ -660,32 +670,56 @@ export const PasaBandaFilter = () => {
               Resultados del Filtro
             </Typography>
 
-            {/* Contenedor de imágenes */}
-            <div className="images-container">
-              {/* Imagen del circuito */}
-              <div className="circuit-image">
-                <img 
-                  src="/src/assets/FPASABANDA.jpeg" 
-                  alt="Circuito Pasa Banda"
-                />
-              </div>
-              
-              {/* Diagrama de Bode */}
-              <div className="bode-plot">
-                <Line
-                  data={{
-                    datasets: [{
-                      data: results.bodeData,
-                      borderColor: '#00ff9d',
-                      borderWidth: 2,
-                      pointRadius: 0,
-                      tension: 0.4
-                    }]
-                  }}
-                  options={bodeOptions}
-                />
-              </div>
-            </div>
+            <Grid container spacing={4}>
+              {/* Circuito con valores - Izquierda */}
+              <Grid item xs={12} md={6}>
+                <div className="circuit-preview circuit-with-values">
+                  <img 
+                    src={circuitImageWithValues}
+                    alt="Circuito Pasa Banda con Valores"
+                    className="circuit-diagram-preview"
+                  />
+                  {/* Valores superpuestos */}
+                  <div className="circuit-values">
+                    <span className="value nR-top-value">
+                      {formatResistance(parseFloat(results.nR) * 1000, resultUnits.nR)}
+                    </span>
+                    <span className="value nR-left-value">
+                      {formatResistance(parseFloat(results.nR) * 1000, resultUnits.nR)}
+                    </span>
+                    <span className="value C-left-value">{results.C}</span>
+                    <span className="value C-center-value">{results.C}</span>
+                    <span className="value R-value">
+                      {formatResistance(parseFloat(results.R) * 1000, resultUnits.R)}
+                    </span>
+                    <span className="value Rf-value">
+                      {formatResistance(parseFloat(results.Rf) * 1000, resultUnits.Rf)}
+                    </span>
+                    <span className="value Ra-value">
+                      {formatResistance(parseFloat(results.Ra) * 1000, resultUnits.Ra)}
+                    </span>
+                  </div>
+                </div>
+              </Grid>
+
+              {/* Diagrama de Bode - Derecha */}
+              <Grid item xs={12} md={6}>
+                <div className="bode-plot">
+                  <Line
+                    data={{
+                      datasets: [{
+                        data: results.bodeData,
+                        borderColor: '#00ff9d',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.4
+                      }]
+                    }}
+                    options={bodeOptions}
+                  />
+                </div>
+              </Grid>
+            </Grid>
             
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
@@ -807,23 +841,22 @@ export const PasaBandaFilter = () => {
             </Grid>
 
             <Grid item xs={12}>
-              <Box className="result-box">
+              <Box className="transfer-function-box">
                 <Typography variant="h6" sx={{ mb: 2, color: 'var(--primary-dark)' }}>
                   Función de Transferencia:
                 </Typography>
                 <div className="transfer-function">
                   <MathJax>
-                    {"\\[H(s) = \\frac{\\frac{1}{RC}(1 + \\frac{R_f}{R_a})s}{s^2 + \\frac{1}{RC}(2 + R_a(1-\\frac{R_f}{R_a}))s + \\frac{1}{R^2C^2}}\\]"}
+                    {"\\[H(s) = \\frac{\\frac{1}{nRC}\\left(1 + \\frac{R_f}{R_a}\\right)s}{s^2 + \\frac{1}{RC}\\left(2 + \\frac{1}{n}\\left(1-\\frac{R_f}{R_a}\\right)\\right)s + \\frac{2}{nR^2C^2}}\\]"}
                   </MathJax>
                 </div>
-                
+
                 <Typography variant="h6" sx={{ mt: 4, mb: 2, color: 'var(--primary-dark)' }}>
                   Función de Transferencia (Valores calculados):
                 </Typography>
                 <div className="transfer-function calculated">
                   <MathJax>
-                    {`\\[H(s) = \\frac{${(parseFloat(results.R.split(' ')[0])/parseFloat(results.C.split(' ')[0])).toFixed(2)}(1 + ${(parseFloat(results.Rf.split(' ')[0])/parseFloat(results.Ra.split(' ')[0])).toFixed(2)})s}
-                    {s^2 + ${(parseFloat(results.R.split(' ')[0])/parseFloat(results.C.split(' ')[0]) * (2 + parseFloat(results.Ra.split(' ')[0])*(1-parseFloat(results.Rf.split(' ')[0])/parseFloat(results.Ra.split(' ')[0])))).toFixed(2)}s + ${(1/(Math.pow(parseFloat(results.R.split(' ')[0]),2)*Math.pow(parseFloat(results.C.split(' ')[0]),2))).toFixed(2)}}\\]`}
+                    {`\\[H(s) = \\frac{${(1/(parseFloat(results.nR) * parseFloat(results.C))).toFixed(2)}(1 + ${(parseFloat(results.Rf)/parseFloat(results.Ra)).toFixed(2)})s}{s^2 + ${(1/(parseFloat(results.R) * parseFloat(results.C)) * (2 + (1/parseFloat(results.n)) * (1-parseFloat(results.Rf)/parseFloat(results.Ra)))).toFixed(2)}s + ${(2/(parseFloat(results.n) * Math.pow(parseFloat(results.R),2) * Math.pow(parseFloat(results.C),2))).toFixed(2)}}\\]`}
                   </MathJax>
                 </div>
               </Box>
