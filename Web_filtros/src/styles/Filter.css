@@ -409,10 +409,10 @@
 }
 
 .result-box {
-  margin-top: 3rem;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 2rem;
+  background: white;  /* Fondo blanco por defecto */
   border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;  /* Aumentado el margen vertical */
 }
 
 /* Separador visual */
@@ -453,8 +453,7 @@
 }
 
 .light .result-box {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(26, 136, 112, 0.2);
+  background: white !important;
 }
 
 .light .result-item {
@@ -481,8 +480,11 @@
 
 /* Contenedor de resultados */
 .results-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;  /* Espacio entre elementos */
+  margin-top: 3rem;  /* Espacio desde arriba */
   width: 100%;
-  margin-top: 4rem;
   padding: 2rem;
   background: rgba(0, 0, 0, 0.4); /* Fondo más oscuro */
   border-radius: 20px;
@@ -750,70 +752,67 @@
 }
 
 /* Valores en modo oscuro */
-.result-value-with-unit span,
 .dark .result-value-with-unit span {
-  color: #ffffff !important; /* Blanco puro para modo oscuro */
+  color: #00ff9d !important;
 }
 
-/* Valores en modo claro */
-.light .result-value-with-unit span:first-of-type {
-  color: #000000 !important; /* Negro puro para modo claro */
+/* Valores en modo claro - verde oscuro */
+.light .result-value-with-unit span {
+  color: #0a5344 !important;  /* Verde oscuro */
 }
 
-/* Ajustar el select en modo oscuro */
-.dark .unit-select-small {
-  background: rgba(0, 255, 157, 0.1);
-  border-color: var(--primary-dark);
-  color: #ffffff;
+/* Estilos para los labels */
+.light .result-item span:first-child {
+  color: #0a5344 !important;  /* Verde oscuro para los labels */
 }
 
-.dark .unit-select-small .MuiSelect-select {
-  color: #ffffff !important;
+.dark .result-item span:first-child {
+  color: #00ff9d !important;  /* Verde claro para modo oscuro */
 }
 
-/* Mantener los estilos del modo claro */
+/* Ajustar el color del texto en el select */
 .light .unit-select-small {
-  background: rgba(26, 136, 112, 0.1);
-  border-color: var(--primary-light);
-  color: #000000;
+  color: #0a5344 !important;
 }
 
 .light .unit-select-small .MuiSelect-select {
-  color: #000000 !important;
+  color: #0a5344 !important;
 }
 
+/* Estilos para la función de transferencia */
 .transfer-function {
-  background: white;  /* Fondo blanco */
+  background: rgba(0, 0, 0, 0.3);  /* Fondo oscuro por defecto */
   border-radius: 8px;
   padding: 1.5rem;
   margin: 1rem 0;
   overflow-x: auto;
-  color: #0a5344;  /* Verde oscuro para el texto */
 }
 
-.transfer-function.calculated {
-  background: rgba(26, 136, 112, 0.1);  /* Fondo verde muy claro para la parte calculada */
+/* Modo oscuro */
+.dark .transfer-function {
+  background: rgba(0, 0, 0, 0.3) !important;  /* Fondo negro semi-transparente */
+  color: #00ff9d;
+}
+
+/* Modo claro */
+.light .transfer-function {
+  background: white !important;  /* Fondo blanco */
   color: #0a5344;
+}
+
+/* Función calculada */
+.dark .transfer-function.calculated {
+  background: rgba(0, 0, 0, 0.4) !important;  /* Un poco más oscuro */
+}
+
+.light .transfer-function.calculated {
+  background: rgba(26, 136, 112, 0.1) !important;
 }
 
 /* Estilos para las fórmulas matemáticas */
 .transfer-function .MathJax {
   font-size: 1.4rem !important;
   color: white;
-}
-
-/* Modo claro */
-.light .transfer-function {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(26, 136, 112, 0.2);
-}
-
-.light .transfer-function.calculated {
-  background: rgba(26, 136, 112, 0.1);
-}
-
-.light .transfer-function .MathJax {
-  color: black;
 }
 
 /* Títulos de secciones */
@@ -1025,10 +1024,10 @@
 
 /* Ajustes para el contenedor de frecuencias de corte */
 .frequencies-box {
-  margin-top: 3rem;
   background: rgba(0, 0, 0, 0.2);
   padding: 2rem;
   border-radius: 12px;
+  margin: 2rem 0;  /* Aumentado el margen vertical */
 }
 
 /* Estilos para el circuito básico en parámetros de entrada */
@@ -1056,34 +1055,49 @@
 
 /* Estilos para la función de transferencia */
 .transfer-function-box {
-  background: white;  /* Fondo blanco en lugar de gris */
+  background: white !important;  /* Fondo blanco por defecto (modo claro) */
   border-radius: 12px;
   padding: 2rem;
   margin: 2rem 0;
 }
 
+/* Modo oscuro - contenedor principal negro */
+.dark .transfer-function-box {
+  background: rgba(0, 0, 0, 0.3) !important;  /* Fondo negro semi-transparente */
+}
+
+/* Estilos para la función de transferencia simbólica */
 .transfer-function {
-  background: white;  /* Fondo blanco */
+  background: rgba(0, 0, 0, 0.1) !important;  /* Gris claro */
   border-radius: 8px;
   padding: 1.5rem;
   margin: 1rem 0;
   overflow-x: auto;
-  color: #0a5344;  /* Verde oscuro para el texto */
 }
 
+/* Función calculada */
 .transfer-function.calculated {
-  background: rgba(26, 136, 112, 0.1);  /* Fondo verde muy claro para la parte calculada */
-  color: #0a5344;
+  background: rgba(26, 136, 112, 0.1) !important;  /* Verde claro transparente */
 }
 
-/* Ajustes para el modo oscuro */
+/* Modo oscuro - función de transferencia */
 .dark .transfer-function {
-  color: #00ff9d;  /* Verde claro para modo oscuro */
+  background: rgba(0, 0, 0, 0.4) !important;  /* Negro más oscuro */
+  color: #00ff9d;
 }
 
-/* Ajustes para el modo claro */
-.light .transfer-function {
-  color: #0a5344;  /* Verde oscuro para modo claro */
+/* Modo oscuro - función calculada */
+.dark .transfer-function.calculated {
+  background: rgba(0, 0, 0, 0.5) !important;  /* Negro aún más oscuro */
+}
+
+/* Colores del texto de las ecuaciones */
+.dark .transfer-function .MathJax {
+  color: #00ff9d !important;
+}
+
+.light .transfer-function .MathJax {
+  color: #0a5344 !important;
 }
 
 /* Ajustes para la visualización de MathJax */
@@ -1105,4 +1119,55 @@
 /* Modo oscuro - mantener el verde claro */
 .dark .transfer-function-box .MuiTypography-h6 {
   color: #00ff9d !important;  /* Verde claro para modo oscuro */
+}
+
+/* Mantener los colores del texto de las ecuaciones como estaban */
+.dark .transfer-function .MathJax {
+  color: #00ff9d !important;
+}
+
+.light .transfer-function .MathJax {
+  color: #0a5344 !important;
+}
+
+/* Modo oscuro - resultados */
+.dark .result-box {
+  background: rgba(0, 0, 0, 0.3) !important;  /* Fondo negro semi-transparente */
+}
+
+/* Modo oscuro - valores */
+.dark .result-value-with-unit {
+  color: #00ff9d !important;
+}
+
+/* Modo oscuro - select */
+.dark .unit-select-small {
+  background: rgba(0, 0, 0, 0.4) !important;
+  color: #00ff9d !important;
+  border-color: rgba(0, 255, 157, 0.2);
+}
+
+.dark .unit-select-small .MuiSelect-select {
+  color: #00ff9d !important;
+}
+
+/* Modo claro - mantener estilos actuales */
+.light .result-box {
+  background: white !important;
+}
+
+.light .result-value-with-unit {
+  color: #0a5344 !important;
+}
+
+.light .unit-select-small {
+  color: #0a5344 !important;
+}
+
+/* Ajustar el grid de resultados */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+  margin-top: 2rem;  /* Espacio desde el título */
 } 

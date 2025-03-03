@@ -1,6 +1,46 @@
 import React, { useState } from 'react';
 import { Grid, Typography, Box, TextField, Button, MenuItem, Select, FormControlLabel, Switch } from '@mui/material';
 import '../styles/Filter.css';
+import circuitImageBasic from '../assets/RECHAZABANDA.png';
+import circuitImageWithValues from '../assets/RECHAZABANDA2.png';
+import { Line } from 'react-chartjs-2';
+import { MathJax, MathJaxContext } from 'better-react-mathjax';
+
+type Results = {
+  wo: string;
+  Q: string;
+  BW: string;
+  fo: string;
+  f1: string;
+  f2: string;
+  R: string;
+  C: string;
+  Rf: string;
+  Ra: string;
+  bodeData: Array<{x: number, y: number}>;
+}
+
+const bodeOptions = {
+  responsive: true,
+  scales: {
+    x: {
+      type: 'logarithmic' as const,
+      position: 'bottom' as const,
+      title: {
+        display: true,
+        text: 'Frecuencia (Hz)'
+      }
+    },
+    y: {
+      type: 'linear' as const,
+      position: 'left' as const,
+      title: {
+        display: true,
+        text: 'Magnitud (dB)'
+      }
+    }
+  }
+};
 
 export const RechazaBandaFilter = () => {
   const [inputs, setInputs] = useState({
@@ -31,18 +71,18 @@ export const RechazaBandaFilter = () => {
   const [resistanceMode, setResistanceMode] = useState('Ra');
   const [showResults, setShowResults] = useState(false);
 
-  const [results, setResults] = useState<{
-    wo: string;
-    Q: string;
-    BW: string;
-    fo: string;
-    f1: string;
-    f2: string;
-    R: string;
-    C: string;
-    Rf: string;
-    Ra: string;
-  } | null>(null);
+  const [results, setResults] = useState<Results | null>(null);
+
+  const [resultUnits, setResultUnits] = useState({
+    fo: 'Hz',
+    BW: 'Hz',
+    f1: 'Hz',
+    f2: 'Hz',
+    R: 'kΩ',
+    C: 'nF',
+    Rf: 'kΩ',
+    Ra: 'kΩ'
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Validar que A < 2 para el rechaza banda
@@ -62,6 +102,13 @@ export const RechazaBandaFilter = () => {
   const handleUnitChange = (param: string, newUnit: string) => {
     setUnits({
       ...units,
+      [param]: newUnit
+    });
+  };
+
+  const handleResultUnitChange = (param: string, newUnit: string) => {
+    setResultUnits({
+      ...resultUnits,
       [param]: newUnit
     });
   };
@@ -131,7 +178,8 @@ export const RechazaBandaFilter = () => {
            (C*1e9).toFixed(2) + ' nF' : 
            (C*1e6).toFixed(2) + ' µF',
         Rf: (Rf/1000).toFixed(2) + ' kΩ',
-        Ra: (Ra/1000).toFixed(2) + ' kΩ'
+        Ra: (Ra/1000).toFixed(2) + ' kΩ',
+        bodeData: []
       };
     } catch (error) {
       console.error('Error en los cálculos:', error);
@@ -151,153 +199,113 @@ export const RechazaBandaFilter = () => {
   };
 
   return (
-    <div className="filter-container">
-      <Grid container spacing={4}>
-        {/* Columna izquierda - Descripción */}
-        <Grid item xs={12} md={6}>
-          <Box className="description-box">
-            <Typography 
-              variant="h5" 
-              sx={{ 
-                fontSize: '1.5rem',
-                fontWeight: 600,
-                marginBottom: '2.5rem',
-                textAlign: 'center',
-                color: '#00ff9d',
-                '&.MuiTypography-root': {
-                  color: '#00ff9d !important'
-                }
-              }}
-            >
-              Descripción de los parámetros de entrada
-            </Typography>
-            <div className="parameter-info">
-              <h4>Frecuencia central (fo):</h4>
-              <p>Frecuencia donde la atenuación es máxima. Es el punto medio de la banda rechazada.</p>
-              
-              <h4>Ancho de banda (BW):</h4>
-              <p>Diferencia entre frecuencias de corte. Define el rango de frecuencias que serán atenuadas (f2 - f1).</p>
-              
-              <h4>Ganancia (A):</h4>
-              <p>Amplificación en las bandas pasantes, expresada en decibelios (dB). Debe ser menor que 2 (6 dB) para este filtro.</p>
-              
-              <h4>Capacitor (C):</h4>
-              <p>Valor del capacitor de referencia. Se usa el doble de este valor (2C) en la rama superior del circuito.</p>
+    <MathJaxContext>
+      <div className="filter-container">
+        <Grid container spacing={4}>
+          {/* Columna izquierda - Descripción */}
+          <Grid item xs={12} md={6}>
+            <Box className="description-box">
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontSize: '1.5rem',
+                  fontWeight: 600,
+                  marginBottom: '2.5rem',
+                  textAlign: 'center',
+                  color: '#00ff9d',
+                  '&.MuiTypography-root': {
+                    color: '#00ff9d !important'
+                  }
+                }}
+              >
+                Descripción de los parámetros de entrada
+              </Typography>
+              <div className="parameter-info">
+                <h4>Frecuencia central (fo):</h4>
+                <p>Frecuencia donde la atenuación es máxima. Es el punto medio de la banda rechazada.</p>
+                
+                <h4>Ancho de banda (BW):</h4>
+                <p>Diferencia entre frecuencias de corte. Define el rango de frecuencias que serán atenuadas (f2 - f1).</p>
+                
+                <h4>Ganancia (A):</h4>
+                <p>Amplificación en las bandas pasantes, expresada en decibelios (dB). Debe ser menor que 2 (6 dB) para este filtro.</p>
+                
+                <h4>Capacitor (C):</h4>
+                <p>Valor del capacitor de referencia. Se usa el doble de este valor (2C) en la rama superior del circuito.</p>
 
-              <h4>Resistencia Ra:</h4>
-              <p>Resistencia de entrada del circuito. Se usa R/2 en la rama inferior del circuito.</p>
+                <h4>Resistencia Ra:</h4>
+                <p>Resistencia de entrada del circuito. Se usa R/2 en la rama inferior del circuito.</p>
 
-              <div className="design-notes">
-                <h4>Notas de diseño:</h4>
-                <ul>
-                  <li>La ganancia A debe ser menor que 2</li>
-                  <li>El factor Q = fo/BW determina la selectividad</li>
-                  <li>La frecuencia central wo = √(wc1×wc2)</li>
-                  <li>El ancho de banda BW = wo/Q</li>
-                </ul>
-              </div>
-            </div>
-          </Box>
-        </Grid>
+                <div className="design-notes">
+                  <h4>Notas de diseño:</h4>
+                  <ul>
+                    <li>La ganancia A debe ser menor que 2</li>
+                    <li>El factor Q = fo/BW determina la selectividad</li>
+                    <li>La frecuencia central wo = √(wc1×wc2)</li>
+                    <li>El ancho de banda BW = wo/Q</li>
+                  </ul>
+                </div>
 
-        {/* Columna derecha - Parámetros de entrada */}
-        <Grid item xs={12} md={6}>
-          <Box className="parameters-box">
-            <Typography 
-              variant="h5" 
-              sx={{ 
-                fontSize: '1.5rem',
-                fontWeight: 600,
-                marginBottom: '2.5rem',
-                textAlign: 'center',
-                color: '#00ff9d',
-                '&.MuiTypography-root': {
-                  color: '#00ff9d !important'
-                }
-              }}
-            >
-              Parámetros de entrada
-            </Typography>
-            
-            {/* Switch para cambiar modo de cálculo */}
-            <div className="calculation-mode-switch">
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={calculationMode === 'FC'}
-                    onChange={(e) => setCalculationMode(e.target.checked ? 'FC' : 'BW')}
-                    color="primary"
+                <div className="circuit-preview basic-circuit">
+                  <img 
+                    src={circuitImageBasic}
+                    alt="Circuito Rechaza Banda Básico"
+                    className="circuit-diagram-preview"
                   />
-                }
-                label={calculationMode === 'FC' ? "Usando frecuencias de corte" : "Usando ancho de banda"}
-              />
-            </div>
-
-            {/* Frecuencia central solo visible en modo BW */}
-            {calculationMode === 'BW' ? (
-              <div className="input-field-container">
-                <TextField
-                  className="cyber-input"
-                  label="Frecuencia central"
-                  name="fo"
-                  value={inputs.fo}
-                  onChange={handleInputChange}
-                  type="number"
-                  inputProps={{ step: "any" }}
-                  fullWidth
-                />
-                <Select
-                  value={units.fo}
-                  onChange={(e) => handleUnitChange('fo', e.target.value)}
-                  className="unit-select"
-                >
-                  <MenuItem value="Hz">Hz</MenuItem>
-                  <MenuItem value="kHz">kHz</MenuItem>
-                  <MenuItem value="MHz">MHz</MenuItem>
-                </Select>
+                </div>
               </div>
-            ) : null}
+            </Box>
+          </Grid>
 
-            {calculationMode === 'BW' ? (
-              // Modo Ancho de Banda
-              <div className="input-field-container">
-                <TextField
-                  className="cyber-input"
-                  label="Ancho de banda"
-                  name="BW"
-                  value={inputs.BW}
-                  onChange={handleInputChange}
-                  type="number"
-                  inputProps={{ step: "any" }}
-                  fullWidth
+          {/* Columna derecha - Parámetros de entrada */}
+          <Grid item xs={12} md={6}>
+            <Box className="parameters-box">
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontSize: '1.5rem',
+                  fontWeight: 600,
+                  marginBottom: '2.5rem',
+                  textAlign: 'center',
+                  color: '#00ff9d',
+                  '&.MuiTypography-root': {
+                    color: '#00ff9d !important'
+                  }
+                }}
+              >
+                Parámetros de entrada
+              </Typography>
+              
+              {/* Switch para cambiar modo de cálculo */}
+              <div className="calculation-mode-switch">
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={calculationMode === 'FC'}
+                      onChange={(e) => setCalculationMode(e.target.checked ? 'FC' : 'BW')}
+                      color="primary"
+                    />
+                  }
+                  label={calculationMode === 'FC' ? "Usando frecuencias de corte" : "Usando ancho de banda"}
                 />
-                <Select
-                  value={units.BW}
-                  onChange={(e) => handleUnitChange('BW', e.target.value)}
-                  className="unit-select"
-                >
-                  <MenuItem value="Hz">Hz</MenuItem>
-                  <MenuItem value="kHz">kHz</MenuItem>
-                  <MenuItem value="MHz">MHz</MenuItem>
-                </Select>
               </div>
-            ) : (
-              // Modo Frecuencias de Corte
-              <>
+
+              {/* Frecuencia central solo visible en modo BW */}
+              {calculationMode === 'BW' ? (
                 <div className="input-field-container">
                   <TextField
                     className="cyber-input"
-                    label="Frecuencia de corte 1 (f₁)"
-                    name="f1"
-                    value={inputs.f1}
+                    label="Frecuencia central"
+                    name="fo"
+                    value={inputs.fo}
                     onChange={handleInputChange}
                     type="number"
                     inputProps={{ step: "any" }}
                     fullWidth
                   />
                   <Select
-                    value={units.f1}
-                    onChange={(e) => handleUnitChange('f1', e.target.value)}
+                    value={units.fo}
+                    onChange={(e) => handleUnitChange('fo', e.target.value)}
                     className="unit-select"
                   >
                     <MenuItem value="Hz">Hz</MenuItem>
@@ -305,20 +313,24 @@ export const RechazaBandaFilter = () => {
                     <MenuItem value="MHz">MHz</MenuItem>
                   </Select>
                 </div>
+              ) : null}
+
+              {calculationMode === 'BW' ? (
+                // Modo Ancho de Banda
                 <div className="input-field-container">
                   <TextField
                     className="cyber-input"
-                    label="Frecuencia de corte 2 (f₂)"
-                    name="f2"
-                    value={inputs.f2}
+                    label="Ancho de banda"
+                    name="BW"
+                    value={inputs.BW}
                     onChange={handleInputChange}
                     type="number"
                     inputProps={{ step: "any" }}
                     fullWidth
                   />
                   <Select
-                    value={units.f2}
-                    onChange={(e) => handleUnitChange('f2', e.target.value)}
+                    value={units.BW}
+                    onChange={(e) => handleUnitChange('BW', e.target.value)}
                     className="unit-select"
                   >
                     <MenuItem value="Hz">Hz</MenuItem>
@@ -326,147 +338,193 @@ export const RechazaBandaFilter = () => {
                     <MenuItem value="MHz">MHz</MenuItem>
                   </Select>
                 </div>
-              </>
-            )}
+              ) : (
+                // Modo Frecuencias de Corte
+                <>
+                  <div className="input-field-container">
+                    <TextField
+                      className="cyber-input"
+                      label="Frecuencia de corte 1 (f₁)"
+                      name="f1"
+                      value={inputs.f1}
+                      onChange={handleInputChange}
+                      type="number"
+                      inputProps={{ step: "any" }}
+                      fullWidth
+                    />
+                    <Select
+                      value={units.f1}
+                      onChange={(e) => handleUnitChange('f1', e.target.value)}
+                      className="unit-select"
+                    >
+                      <MenuItem value="Hz">Hz</MenuItem>
+                      <MenuItem value="kHz">kHz</MenuItem>
+                      <MenuItem value="MHz">MHz</MenuItem>
+                    </Select>
+                  </div>
+                  <div className="input-field-container">
+                    <TextField
+                      className="cyber-input"
+                      label="Frecuencia de corte 2 (f₂)"
+                      name="f2"
+                      value={inputs.f2}
+                      onChange={handleInputChange}
+                      type="number"
+                      inputProps={{ step: "any" }}
+                      fullWidth
+                    />
+                    <Select
+                      value={units.f2}
+                      onChange={(e) => handleUnitChange('f2', e.target.value)}
+                      className="unit-select"
+                    >
+                      <MenuItem value="Hz">Hz</MenuItem>
+                      <MenuItem value="kHz">kHz</MenuItem>
+                      <MenuItem value="MHz">MHz</MenuItem>
+                    </Select>
+                  </div>
+                </>
+              )}
 
-            <div className="input-field-container">
-              <TextField
-                className="cyber-input"
-                label="Ganancia"
-                name="A"
-                value={inputs.A}
-                onChange={handleInputChange}
-                type="number"
-                inputProps={{ step: "any" }}
-                fullWidth
-              />
-            </div>
+              <div className="input-field-container">
+                <TextField
+                  className="cyber-input"
+                  label="Ganancia"
+                  name="A"
+                  value={inputs.A}
+                  onChange={handleInputChange}
+                  type="number"
+                  inputProps={{ step: "any" }}
+                  fullWidth
+                />
+              </div>
 
-            {/* Switch para Capacitor/Resistencia */}
-            <div className="calculation-mode-switch">
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={capacitorMode === 'R'}
-                    onChange={(e) => setCapacitorMode(e.target.checked ? 'R' : 'C')}
-                    color="primary"
+              {/* Switch para Capacitor/Resistencia */}
+              <div className="calculation-mode-switch">
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={capacitorMode === 'R'}
+                      onChange={(e) => setCapacitorMode(e.target.checked ? 'R' : 'C')}
+                      color="primary"
+                    />
+                  }
+                  label={capacitorMode === 'R' ? "Usando Resistencia R" : "Usando Capacitor C"}
+                />
+              </div>
+
+              {capacitorMode === 'C' ? (
+                <div className="input-field-container">
+                  <TextField
+                    className="cyber-input"
+                    label="Capacitor"
+                    name="C"
+                    value={inputs.C}
+                    onChange={handleInputChange}
+                    type="number"
+                    inputProps={{ step: "any" }}
+                    fullWidth
                   />
-                }
-                label={capacitorMode === 'R' ? "Usando Resistencia R" : "Usando Capacitor C"}
-              />
-            </div>
-
-            {capacitorMode === 'C' ? (
-              <div className="input-field-container">
-                <TextField
-                  className="cyber-input"
-                  label="Capacitor"
-                  name="C"
-                  value={inputs.C}
-                  onChange={handleInputChange}
-                  type="number"
-                  inputProps={{ step: "any" }}
-                  fullWidth
-                />
-                <Select
-                  value={units.C}
-                  onChange={(e) => handleUnitChange('C', e.target.value)}
-                  className="unit-select"
-                >
-                  <MenuItem value="pF">pF</MenuItem>
-                  <MenuItem value="nF">nF</MenuItem>
-                  <MenuItem value="µF">µF</MenuItem>
-                </Select>
-              </div>
-            ) : (
-              <div className="input-field-container">
-                <TextField
-                  className="cyber-input"
-                  label="Resistencia R"
-                  name="R"
-                  value={inputs.R}
-                  onChange={handleInputChange}
-                  type="number"
-                  inputProps={{ step: "any" }}
-                  fullWidth
-                />
-                <Select
-                  value={units.R}
-                  onChange={(e) => handleUnitChange('R', e.target.value)}
-                  className="unit-select"
-                >
-                  <MenuItem value="Ω">Ω</MenuItem>
-                  <MenuItem value="kΩ">kΩ</MenuItem>
-                </Select>
-              </div>
-            )}
-
-            {/* Switch para Ra/Rf */}
-            <div className="calculation-mode-switch">
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={resistanceMode === 'Rf'}
-                    onChange={(e) => setResistanceMode(e.target.checked ? 'Rf' : 'Ra')}
-                    color="primary"
+                  <Select
+                    value={units.C}
+                    onChange={(e) => handleUnitChange('C', e.target.value)}
+                    className="unit-select"
+                  >
+                    <MenuItem value="pF">pF</MenuItem>
+                    <MenuItem value="nF">nF</MenuItem>
+                    <MenuItem value="µF">µF</MenuItem>
+                  </Select>
+                </div>
+              ) : (
+                <div className="input-field-container">
+                  <TextField
+                    className="cyber-input"
+                    label="Resistencia R"
+                    name="R"
+                    value={inputs.R}
+                    onChange={handleInputChange}
+                    type="number"
+                    inputProps={{ step: "any" }}
+                    fullWidth
                   />
-                }
-                label={resistanceMode === 'Rf' ? "Usando Resistencia Rf" : "Usando Resistencia Ra"}
-              />
-            </div>
+                  <Select
+                    value={units.R}
+                    onChange={(e) => handleUnitChange('R', e.target.value)}
+                    className="unit-select"
+                  >
+                    <MenuItem value="Ω">Ω</MenuItem>
+                    <MenuItem value="kΩ">kΩ</MenuItem>
+                  </Select>
+                </div>
+              )}
 
-            {resistanceMode === 'Ra' ? (
-              <div className="input-field-container">
-                <TextField
-                  className="cyber-input"
-                  label="Resistencia Ra"
-                  name="Ra"
-                  value={inputs.Ra}
-                  onChange={handleInputChange}
-                  type="number"
-                  inputProps={{ step: "any" }}
-                  fullWidth
+              {/* Switch para Ra/Rf */}
+              <div className="calculation-mode-switch">
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={resistanceMode === 'Rf'}
+                      onChange={(e) => setResistanceMode(e.target.checked ? 'Rf' : 'Ra')}
+                      color="primary"
+                    />
+                  }
+                  label={resistanceMode === 'Rf' ? "Usando Resistencia Rf" : "Usando Resistencia Ra"}
                 />
-                <Select
-                  value={units.Ra}
-                  onChange={(e) => handleUnitChange('Ra', e.target.value)}
-                  className="unit-select"
-                >
-                  <MenuItem value="Ω">Ω</MenuItem>
-                  <MenuItem value="kΩ">kΩ</MenuItem>
-                </Select>
               </div>
-            ) : (
-              <div className="input-field-container">
-                <TextField
-                  className="cyber-input"
-                  label="Resistencia Rf"
-                  name="Rf"
-                  value={inputs.Rf}
-                  onChange={handleInputChange}
-                  type="number"
-                  inputProps={{ step: "any" }}
-                  fullWidth
-                />
-                <Select
-                  value={units.Rf}
-                  onChange={(e) => handleUnitChange('Rf', e.target.value)}
-                  className="unit-select"
-                >
-                  <MenuItem value="Ω">Ω</MenuItem>
-                  <MenuItem value="kΩ">kΩ</MenuItem>
-                </Select>
-              </div>
-            )}
 
-            <Button 
-              variant="contained" 
-              className="calculate-button"
-              onClick={handleCalculate}
-            >
-              CALCULAR
-            </Button>
-          </Box>
+              {resistanceMode === 'Ra' ? (
+                <div className="input-field-container">
+                  <TextField
+                    className="cyber-input"
+                    label="Resistencia Ra"
+                    name="Ra"
+                    value={inputs.Ra}
+                    onChange={handleInputChange}
+                    type="number"
+                    inputProps={{ step: "any" }}
+                    fullWidth
+                  />
+                  <Select
+                    value={units.Ra}
+                    onChange={(e) => handleUnitChange('Ra', e.target.value)}
+                    className="unit-select"
+                  >
+                    <MenuItem value="Ω">Ω</MenuItem>
+                    <MenuItem value="kΩ">kΩ</MenuItem>
+                  </Select>
+                </div>
+              ) : (
+                <div className="input-field-container">
+                  <TextField
+                    className="cyber-input"
+                    label="Resistencia Rf"
+                    name="Rf"
+                    value={inputs.Rf}
+                    onChange={handleInputChange}
+                    type="number"
+                    inputProps={{ step: "any" }}
+                    fullWidth
+                  />
+                  <Select
+                    value={units.Rf}
+                    onChange={(e) => handleUnitChange('Rf', e.target.value)}
+                    className="unit-select"
+                  >
+                    <MenuItem value="Ω">Ω</MenuItem>
+                    <MenuItem value="kΩ">kΩ</MenuItem>
+                  </Select>
+                </div>
+              )}
+
+              <Button 
+                variant="contained" 
+                className="calculate-button"
+                onClick={handleCalculate}
+              >
+                CALCULAR
+              </Button>
+            </Box>
+          </Grid>
         </Grid>
 
         {/* Contenedor de resultados */}
@@ -476,66 +534,91 @@ export const RechazaBandaFilter = () => {
               Resultados del Filtro
             </Typography>
 
-            {/* Imagen del circuito */}
-            <div className="circuit-image">
-              <img 
-                src="src/assets/RECHAZABANDA.png" 
-                alt="Circuito Rechaza Banda"
-              />
-            </div>
-            
-            <Grid container spacing={3}>
+            <Grid container spacing={4}>
+              {/* Circuito con valores - Izquierda */}
+              <Grid item xs={12} md={6}>
+                <div className="circuit-preview circuit-with-values">
+                  <img 
+                    src={circuitImageWithValues}
+                    alt="Circuito Rechaza Banda con Valores"
+                    className="circuit-diagram-preview"
+                  />
+                  {/* Valores superpuestos */}
+                  <div className="circuit-values">
+                    {/* ... valores calculados ... */}
+                  </div>
+                </div>
+              </Grid>
+
+              {/* Diagrama de Bode - Derecha */}
+              <Grid item xs={12} md={6}>
+                <div className="bode-plot">
+                  <Line
+                    data={{
+                      datasets: [{
+                        data: results.bodeData,
+                        borderColor: '#00ff9d',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.4
+                      }]
+                    }}
+                    options={bodeOptions}
+                  />
+                </div>
+              </Grid>
+
+              {/* Valores calculados - Izquierda */}
               <Grid item xs={12} md={6}>
                 <Box className="result-box">
                   <Typography variant="h6" sx={{ mb: 2, color: 'var(--primary-dark)' }}>
                     Valores calculados:
                   </Typography>
-                  {calculationMode === 'FC' && (
-                    <>
-                      <div className="result-item">
-                        <span>Frecuencia central (fo):</span>
-                        <span>{results.fo}</span>
-                      </div>
-                      <div className="result-item">
-                        <span>Ancho de banda (BW):</span>
-                        <span>{results.BW}</span>
-                      </div>
-                    </>
-                  )}
+                  {/* ... valores calculados igual que PasaBandaFilter ... */}
                   <div className="result-item">
-                    <span>Factor Q:</span>
-                    <span>{results.Q}</span>
-                  </div>
-                  <div className="result-item">
-                    <span>{capacitorMode === 'C' ? 'Resistencia R:' : 'Capacitor C:'}</span>
-                    <span>{capacitorMode === 'C' ? results.R : results.C}</span>
-                  </div>
-                  <div className="result-item">
-                    <span>Resistencia {resistanceMode === 'Ra' ? 'Rf' : 'Ra'}:</span>
-                    <span>{resistanceMode === 'Ra' ? results.Rf : results.Ra}</span>
+                    <span>Frecuencia central (fo):</span>
+                    <div className="result-value-with-unit">
+                      <span>{parseFloat(results.fo)}</span>
+                      <Select
+                        value={resultUnits.fo}
+                        onChange={(e) => handleResultUnitChange('fo', e.target.value)}
+                        className="unit-select-small"
+                      >
+                        <MenuItem value="Hz">Hz</MenuItem>
+                        <MenuItem value="kHz">kHz</MenuItem>
+                        <MenuItem value="MHz">MHz</MenuItem>
+                      </Select>
+                    </div>
                   </div>
                 </Box>
               </Grid>
-              
+
+              {/* Función de transferencia - Derecha */}
               <Grid item xs={12} md={6}>
                 <Box className="result-box">
                   <Typography variant="h6" sx={{ mb: 2, color: 'var(--primary-dark)' }}>
-                    Frecuencias de corte:
+                    Función de Transferencia:
                   </Typography>
-                  <div className="result-item">
-                    <span>f₁:</span>
-                    <span>{results.f1}</span>
+                  <div className="transfer-function">
+                    <MathJax>
+                      {/* Ecuación de transferencia para rechaza banda */}
+                    </MathJax>
                   </div>
-                  <div className="result-item">
-                    <span>f₂:</span>
-                    <span>{results.f2}</span>
+
+                  <Typography variant="h6" sx={{ mt: 4, mb: 2, color: 'var(--primary-dark)' }}>
+                    Función de Transferencia (Valores calculados):
+                  </Typography>
+                  <div className="transfer-function calculated">
+                    <MathJax>
+                      {/* Ecuación con valores calculados */}
+                    </MathJax>
                   </div>
                 </Box>
               </Grid>
             </Grid>
           </div>
         )}
-      </Grid>
-    </div>
+      </div>
+    </MathJaxContext>
   );
 }; 

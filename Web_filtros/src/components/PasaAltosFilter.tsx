@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Grid, Typography, Box, TextField, Button, MenuItem, Select, FormControlLabel, Switch } from '@mui/material';
 import '../styles/Filter.css';
+import circuitImageBasic from '../assets/PASAALTOS.png';
+import circuitImageWithValues from '../assets/PASAALTOS2.png';
 
 export const PasaAltosFilter = () => {
   const [inputs, setInputs] = useState({
@@ -23,11 +25,13 @@ export const PasaAltosFilter = () => {
   const [results, setResults] = useState<{
     wo: string;
     n: string;
+    Q: string;
     R: string;
     C: string;
+    nR: string;
     Rf: string;
     Ra: string;
-    nR: string;
+    bodeData: Array<{x: number, y: number}>;
   } | null>(null);
 
   const [showResults, setShowResults] = useState(false);
@@ -95,18 +99,23 @@ export const PasaAltosFilter = () => {
         console.log('Modo Rf:', { Rf_input: Rf, Ra_calculado: Ra });
       }
 
+      // Calcular nR (siempre)
+      const nR = n * R;
+
       return {
         wo: (wo/(2*Math.PI)).toFixed(2) + ' Hz',
         n: n.toFixed(3),
+        Q: Q.toFixed(3),
         R: (R/1000).toFixed(2) + ' kΩ',
         C: C < 1e-9 ? 
            (C*1e12).toFixed(2) + ' pF' : 
            C < 1e-6 ? 
            (C*1e9).toFixed(2) + ' nF' : 
            (C*1e6).toFixed(2) + ' µF',
+        nR: (nR/1000).toFixed(2) + ' kΩ',
         Rf: (Rf/1000).toFixed(2) + ' kΩ',
         Ra: (Ra/1000).toFixed(2) + ' kΩ',
-        nR: ((n * R)/1000).toFixed(2) + ' kΩ'
+        bodeData
       };
     } catch (error) {
       console.error('Error en los cálculos:', error);
@@ -362,7 +371,7 @@ export const PasaAltosFilter = () => {
           {/* Imagen del circuito */}
           <div className="circuit-image">
             <img 
-              src="src/assets/PASAALTOS.png" 
+              src={circuitImageBasic} 
               alt="Circuito Pasa Altos"
             />
           </div>
