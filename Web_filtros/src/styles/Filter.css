@@ -332,13 +332,36 @@
 /* Input containers */
 .input-field-container {
   display: flex;
-  gap: 1rem;
   align-items: center;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 1rem;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 255, 157, 0.2);
-  margin-bottom: 1rem;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.gain-unit {
+  min-width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 255, 157, 0.1);
+  border: 1px solid var(--primary-dark);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Modo oscuro - texto blanco, borde verde */
+.dark .gain-unit {
+  color: #ffffff !important;
+  border-color: #00ff9d;
+  background: rgba(0, 255, 157, 0.1);
+}
+
+/* Modo claro - texto negro, borde verde oscuro */
+.light .gain-unit {
+  color: #0a5344 !important;
+  border-color: #0a5344;
+  background: rgba(10, 83, 68, 0.1);
 }
 
 /* Input styling */
@@ -751,68 +774,81 @@
   gap: 0.5rem;
 }
 
-/* Valores en modo oscuro */
+/* Valores en modo oscuro - color blanco */
 .dark .result-value-with-unit span {
-  color: #00ff9d !important;
+  color: white !important;
 }
 
 /* Valores en modo claro - verde oscuro */
-.light .result-value-with-unit span {
-  color: #0a5344 !important;  /* Verde oscuro */
-}
-
-/* Estilos para los labels */
-.light .result-item span:first-child {
-  color: #0a5344 !important;  /* Verde oscuro para los labels */
-}
-
-.dark .result-item span:first-child {
-  color: #00ff9d !important;  /* Verde claro para modo oscuro */
-}
-
-/* Ajustar el color del texto en el select */
-.light .unit-select-small {
+.light .result-value-with-unit span,
+.light .result-item span {  /* Aplicar a todos los spans en modo claro */
   color: #0a5344 !important;
 }
 
-.light .unit-select-small .MuiSelect-select {
+/* Ajustar el select de unidades */
+.unit-select-small {
+  min-width: 70px;
+  height: 32px;
+  margin-left: 8px;
+}
+
+/* Ajustar el color del select en modo claro */
+.light .unit-select-small,
+.light .MuiSelect-select {
   color: #0a5344 !important;
+}
+
+/* Mantener el peso de la fuente */
+.result-item span:last-child {
+  font-weight: 600;
 }
 
 /* Estilos para la función de transferencia */
+.transfer-function-box {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  color: #00ff9d;
+}
+
 .transfer-function {
-  background: rgba(0, 0, 0, 0.3);  /* Fondo oscuro por defecto */
+  background: rgba(0, 0, 0, 0.4);
   border-radius: 8px;
   padding: 1.5rem;
   margin: 1rem 0;
   overflow-x: auto;
 }
 
-/* Modo oscuro */
-.dark .transfer-function {
-  background: rgba(0, 0, 0, 0.3) !important;  /* Fondo negro semi-transparente */
-  color: #00ff9d;
+.transfer-function.calculated {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.transfer-function .MathJax {
+  font-size: 1.2rem !important;
+  color: #00ff9d !important;
+}
+
+.transfer-function-box .MuiTypography-h6 {
+  color: #00ff9d !important;
 }
 
 /* Modo claro */
-.light .transfer-function {
-  background: white !important;  /* Fondo blanco */
+.light .transfer-function-box {
+  background: white;
   color: #0a5344;
 }
 
-/* Función calculada */
-.dark .transfer-function.calculated {
-  background: rgba(0, 0, 0, 0.4) !important;  /* Un poco más oscuro */
+.light .transfer-function {
+  background: rgba(26, 136, 112, 0.1);
 }
 
-.light .transfer-function.calculated {
-  background: rgba(26, 136, 112, 0.1) !important;
+.light .transfer-function .MathJax {
+  color: #0a5344 !important;
 }
 
-/* Estilos para las fórmulas matemáticas */
-.transfer-function .MathJax {
-  font-size: 1.4rem !important;
-  color: white;
+.light .transfer-function-box .MuiTypography-h6 {
+  color: #0a5344 !important;
 }
 
 /* Títulos de secciones */
@@ -945,13 +981,14 @@
 
 .circuit-values .value {
   position: absolute;
-  background: rgba(0, 255, 157, 0.15);
-  padding: 3px 6px;
+  color: #00ff9d;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 2px 6px;
   border-radius: 4px;
-  font-size: 0.75rem;
-  color: var(--primary-dark);
-  white-space: nowrap;
-  backdrop-filter: blur(3px);
+  white-space: nowrap;  /* Asegurar que el texto no se rompa */
+  min-width: fit-content;  /* Asegurar que quepa todo el contenido */
 }
 
 /* Posiciones específicas ajustadas */
@@ -1011,7 +1048,7 @@
 
 .light .circuit-values .value {
   color: #0a5344;
-  background: rgba(26, 136, 112, 0.1);
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .dark .bode-plot {
@@ -1055,10 +1092,11 @@
 
 /* Estilos para la función de transferencia */
 .transfer-function-box {
-  background: white !important;  /* Fondo blanco por defecto (modo claro) */
+  background: rgba(0, 0, 0, 0.3);
   border-radius: 12px;
   padding: 2rem;
   margin: 2rem 0;
+  color: #00ff9d;
 }
 
 /* Modo oscuro - contenedor principal negro */
@@ -1077,7 +1115,7 @@
 
 /* Función calculada */
 .transfer-function.calculated {
-  background: rgba(26, 136, 112, 0.1) !important;  /* Verde claro transparente */
+  background: rgba(26, 136, 112, 0.1) !important;
 }
 
 /* Modo oscuro - función de transferencia */
@@ -1108,7 +1146,7 @@
 
 /* Títulos de la función de transferencia */
 .transfer-function-box .MuiTypography-h6 {
-  color: var(--primary-dark) !important;
+  color: #00ff9d !important;
 }
 
 /* Modo claro - títulos en verde oscuro */
@@ -1170,4 +1208,9 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 2rem;
   margin-top: 2rem;  /* Espacio desde el título */
+}
+
+.unit-select-small {
+  min-width: 70px;
+  height: 32px;
 } 
