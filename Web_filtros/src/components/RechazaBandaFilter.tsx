@@ -40,23 +40,24 @@ const calcularFuncionTransferencia = (R: number, C: number, Rf: number, Ra: numb
     Ra: `${Ra} ohms`
   });
 
-  // Calcular numerador
+  // Calcular ganancia
   const ganancia = 1 + Rf/Ra;
-  const numerador_final = ganancia;
-
-  // Calcular denominador
-  const coef_s = 1/(R*C);
+  
+  // Calcular término independiente (1/R²C²)
   const termino_independiente = 1/(R*R*C*C);
+  
+  // Calcular coeficiente de s en el denominador (2/RC)
+  const coef_s = 2/(R*C);
 
   // Formatear la función de transferencia
-  const numerador = `${numerador_final.toFixed(3)}(s^2 + \\frac{1}{R^2C^2})`;
-  const denominador = `s^2 + \\frac{1}{RC}s + \\frac{1}{R^2C^2}`;
+  const numerador = `${ganancia.toFixed(3)}(s^2 + \\frac{1}{${R.toExponential(2)}\\cdot${C.toExponential(2)}^2})`;
+  const denominador = `s^2 + \\frac{2}{${R.toExponential(2)}\\cdot${C.toExponential(2)}}s + \\frac{1}{${R.toExponential(2)}^2\\cdot${C.toExponential(2)}^2}`;
 
   return { 
     numerador, 
     denominador,
     coeficientes: {
-      num: numerador_final,
+      num: ganancia,
       den_s: coef_s,
       den_ind: termino_independiente
     }
@@ -99,7 +100,9 @@ export const RechazaBandaFilter = () => {
   interface Results {
     Q: string;
     R: string;
+    R_half: string;
     C: string;
+    C_double: string;
     Rf: string;
     Ra: string;
     fo: string;
@@ -128,7 +131,9 @@ export const RechazaBandaFilter = () => {
     R: 'kΩ',
     Ra: 'kΩ',
     Rf: 'kΩ',
-    C: 'nF'
+    C: 'nF',
+    C_double: 'nF',
+    R_half: 'kΩ'  // Agregar unidad independiente para R/2
   });
 
   const [darkMode] = useState(false);
@@ -141,21 +146,45 @@ export const RechazaBandaFilter = () => {
   };
 
   const handleUnitChange = (param: string, newUnit: string) => {
-    setUnits({
-      ...units,
+    setUnits(prev => ({
+      ...prev,
       [param]: newUnit
-    });
+    }));
+
+    // Convertir valores de frecuencia cuando cambian las unidades
+    if (results && (param === 'f1' || param === 'f2' || param === 'fo' || param === 'BW')) {
+      const currentValue = parseFloat(results[param] as string);
+      
+      // Primero convertir a Hz (unidad base)
+      const baseValueInHz = currentValue * (units[param] === 'MHz' ? 1000000 : units[param] === 'kHz' ? 1000 : 1);
+      
+      // Luego convertir a la nueva unidad
+      let newValue: number;
+      if (newUnit === 'MHz') {
+        newValue = baseValueInHz / 1000000;
+      } else if (newUnit === 'kHz') {
+        newValue = baseValueInHz / 1000;
+      } else {
+        newValue = baseValueInHz;
+      }
+
+      setResults(prevResults => {
+        if (!prevResults) return prevResults;
+        return {
+          ...prevResults,
+          [param]: newValue.toFixed(2)
+        };
+      });
+    }
   };
 
   const calculateValues = () => {
     try {
-      // Convertir frecuencia a Hz y calcular BW
-      const fo = parseFloat(inputs.fo) * (units.fo === 'kHz' ? 1000 : units.fo === 'MHz' ? 1000000 : 1);
-      let BW, f1, f2;  // Declarar f1 y f2 aquí
+      let fo, BW, f1, f2;
       
       if (calculationMode === 'BW') {
+        fo = parseFloat(inputs.fo) * (units.fo === 'kHz' ? 1000 : units.fo === 'MHz' ? 1000000 : 1);
         BW = parseFloat(inputs.BW) * (units.BW === 'kHz' ? 1000 : units.BW === 'MHz' ? 1000000 : 1);
-        // Calcular f1 y f2 a partir de fo y BW
         const Q = fo / BW;
         f1 = fo * (Math.sqrt(1 + 1/(4*Q*Q)) - 1/(2*Q));
         f2 = fo * (Math.sqrt(1 + 1/(4*Q*Q)) + 1/(2*Q));
@@ -163,98 +192,93 @@ export const RechazaBandaFilter = () => {
         f1 = parseFloat(inputs.f1) * (units.f1 === 'kHz' ? 1000 : units.f1 === 'MHz' ? 1000000 : 1);
         f2 = parseFloat(inputs.f2) * (units.f2 === 'kHz' ? 1000 : units.f2 === 'MHz' ? 1000000 : 1);
         BW = Math.abs(f2 - f1);
+        fo = Math.sqrt(f1 * f2);
       }
 
       const wo = 2 * Math.PI * fo;
       const Q = fo / BW;
 
-      // Ganancia en dB a lineal
+      // Convertir ganancia de dB a V/V
       const A_db = parseFloat(inputs.A);
       const A = Math.pow(10, A_db/20);
 
-      // Cálculo de n
-      const A_plus_1_squared = Math.pow(A + 1, 2);
-      const term_with_Q = A_plus_1_squared / (2 * Q * Q);
-
-
-      let C, R;
+      let C, R, R_half;
       if (capacitorMode === 'C') {
-        C = parseFloat(inputs.C) * (units.C === 'µF' ? 1e-6 : units.C === 'nF' ? 1e-9 : 1e-12);
-        R = 1/ (wo * C);
-        console.log('Modo C - Cálculos:', { C_input: C, R_calculado: R });
+        // Convertir C a Faradios
+        const C_input = parseFloat(inputs.C);
+        C = C_input * (units.C === 'µF' ? 1e-6 : units.C === 'nF' ? 1e-9 : 1e-12);
+        R = 1 / (wo * C);
+        R_half = R / 2;
       } else {
-        R = parseFloat(inputs.R) * (units.R === 'kΩ' ? 1000 : 1);
-        C = 1/ (wo * R);
-        console.log('Modo R - Cálculos:', { R_input: R, C_calculado: C });
+        // Convertir R a Ohms
+        const R_input = parseFloat(inputs.R);
+        R = R_input * (units.R === 'kΩ' ? 1000 : 1);
+        C = 1 / (wo * R);
+        R_half = R / 2;
       }
 
-      // Cálculos de Ra y Rf
+      // Cálculos de Ra y Rf usando la ganancia en V/V
       let Ra, Rf;
       if (resistanceMode === 'Ra') {
         Ra = parseFloat(inputs.Ra) * (units.Ra === 'kΩ' ? 1000 : 1);
-        const relation = 1-(1/2*Q);
-        Rf = Ra * relation;
-
+        Rf = Ra * (A - 1);
       } else {
         Rf = parseFloat(inputs.Rf) * (units.Rf === 'kΩ' ? 1000 : 1);
-        const relation = 1-(1/2*Q);
-        Ra = Rf / relation;
-
+        Ra = Rf / (A - 1);
       }
-      // Calcular nR
 
-      // Convertir todas las resistencias a ohms y capacitor a faradios
-      const R_ohms = R;  // Ya está en ohms
-      const Rf_ohms = Rf;  // Ya está en ohms
-      const Ra_ohms = Ra;  // Ya está en ohms
-      const C_farads = C;  // Ya está en faradios
-
-      console.log('Valores antes de calcular H(s):', {
-
-        R_ohms,
-        C_farads,
-        Rf_ohms,
-        Ra_ohms
-      });
+      // Calcular valores de 2C
+      const C_double = 2 * C;
 
       const { numerador, denominador, coeficientes } = calcularFuncionTransferencia(
-     
-        R_ohms,
-        C_farads,
-        Rf_ohms,
-        Ra_ohms
+        R,
+        C,
+        Rf,
+        Ra
       );
 
-      // Actualizar results con los nuevos valores
-      const results = {
-        Q: Q.toFixed(3),
-        R: (R/1000).toFixed(2),
-        C: C < 1e-9 ? 
-           (C*1e12).toFixed(2) : 
-           C < 1e-6 ? 
-           (C*1e9).toFixed(2) : 
-           (C*1e6).toFixed(2),
-        Rf: (Rf/1000).toFixed(2),
-        Ra: (Ra/1000).toFixed(2),
-        fo: (fo/1000).toFixed(2) + ' kHz',
-        BW: (BW/1000).toFixed(2) + ' kHz',
-        f1: (f1/1000).toFixed(2) + ' kHz',
-        f2: (f2/1000).toFixed(2) + ' kHz',
+      // Convertir valores a las unidades seleccionadas para mostrar
+      const convertToSelectedUnit = (value: number, type: 'R' | 'C', unitType?: 'R' | 'Ra' | 'Rf') => {
+        if (type === 'R') {
+          // Convertir de ohms a la unidad seleccionada
+          const unit = unitType ? resultUnits[unitType] : resultUnits.R;
+          if (unit === 'kΩ') return value / 1000;
+          if (unit === 'MΩ') return value / 1000000;
+          return value;
+        } else {
+          // Convertir de faradios a la unidad seleccionada
+          if (resultUnits.C === 'µF') return value * 1e6;
+          if (resultUnits.C === 'nF') return value * 1e9;
+          return value * 1e12;
+        }
+      };
+
+      // Formatear valores con dos decimales y mantener ceros iniciales
+      const formatearValor = (valor: number) => {
+        if (valor === 0) return "0.00";
+        return valor.toFixed(2);
+      };
+
+      // Convertir y formatear valores para mostrar
+      const calculatedResults = {
+        Q: Q.toFixed(2),
+        R: formatearValor(convertToSelectedUnit(R, 'R')),
+        R_half: formatearValor(convertToSelectedUnit(R_half, 'R')),
+        C: formatearValor(convertToSelectedUnit(C, 'C')),
+        C_double: formatearValor(convertToSelectedUnit(C_double, 'C')),
+        Rf: formatearValor(convertToSelectedUnit(Rf, 'R', 'Rf')),
+        Ra: formatearValor(convertToSelectedUnit(Ra, 'R', 'Ra')),
+        fo: formatearValor(fo),
+        BW: formatearValor(BW),
+        f1: formatearValor(f1),
+        f2: formatearValor(f2),
         bodeData: [],
         numerador,
         denominador,
         coeficientes
       };
 
-      // Log final para verificar los valores
-      console.log('Relación final Rf/Ra:', {
-        Rf: Rf,
-        Ra: Ra,
-        relation: Rf/Ra,
-        mode: resistanceMode
-      });
-
-      return results;
+      return calculatedResults;
     } catch (error) {
       console.error('Error en cálculos:', error);
       throw error;
@@ -265,16 +289,25 @@ export const RechazaBandaFilter = () => {
   const generateBodeData = (num_coef: number, den_s_coef: number, den_ind_coef: number) => {
     const bodeData = [];
     
+    // Obtener f1 y f2 de los resultados y convertir a Hz
+    const f1 = parseFloat(results?.f1 || "0") * (units.f1 === 'kHz' ? 1000 : units.f1 === 'MHz' ? 1000000 : 1);
+    const f2 = parseFloat(results?.f2 || "0") * (units.f2 === 'kHz' ? 1000 : units.f2 === 'MHz' ? 1000000 : 1);
+    
+    // Establecer el rango de frecuencias (tres décadas antes de f1 hasta tres décadas después de f2)
+    const startFreq = Math.max(0.1, f1 / 1000);
+    const endFreq = f2 * 1000;
+    
     // Generar puntos para el diagrama de Bode
-    for (let freq = 1; freq <= 1000000; freq *= 1.1) {
+    let freq = startFreq;
+    while (freq <= endFreq) {
       const w = 2 * Math.PI * freq;
       const s = complex(0, w);
       
-      // Calcular numerador: num_coef * s
-      const num = multiply(num_coef, s);
-      
-      // Calcular denominador: s² + den_s_coef*s + den_ind_coef
+      // Calcular numerador: ganancia * (s² + wo²)
       const s_squared = multiply(s, s);
+      const num = add(multiply(num_coef, s_squared), multiply(num_coef, den_ind_coef));
+      
+      // Calcular denominador: s² + (2/RC)s + wo²
       const s_term = multiply(den_s_coef, s);
       const den = add(add(s_squared, s_term), den_ind_coef);
       
@@ -288,6 +321,9 @@ export const RechazaBandaFilter = () => {
         x: freq,
         y: magnitude_db
       });
+
+      // Incrementar la frecuencia logarítmicamente (más puntos para mejor resolución)
+      freq *= 1.05;
     }
 
     return bodeData;
@@ -325,7 +361,13 @@ export const RechazaBandaFilter = () => {
           color: darkMode ? '#ffffff' : '#0a5344'
         },
         ticks: {
-          color: darkMode ? '#ffffff' : '#0a5344'
+          color: darkMode ? '#ffffff' : '#0a5344',
+          callback: function(value: any) {
+            if (value === 0) return '0';
+            const v = Math.log10(value);
+            if (Math.floor(v) === v) return value.toString();
+            return '';
+          }
         },
         grid: {
           color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(10, 83, 68, 0.1)'
@@ -340,7 +382,8 @@ export const RechazaBandaFilter = () => {
           color: darkMode ? '#ffffff' : '#0a5344'
         },
         ticks: {
-          color: darkMode ? '#ffffff' : '#0a5344'
+          color: darkMode ? '#ffffff' : '#0a5344',
+          stepSize: 10
         },
         grid: {
           color: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(10, 83, 68, 0.1)'
@@ -361,60 +404,45 @@ export const RechazaBandaFilter = () => {
     }
   } as const;
 
-  // Corregir la función formatValueWithUnit
-  const formatValueWithUnit = (value: number, fromUnit: string, toUnit: string): string => {
-    if (fromUnit.includes('F')) {  // Si es un capacitor
-      let valueInPf = value;
-      if (fromUnit === 'µF') valueInPf = value * 1000000;
-      if (fromUnit === 'nF') valueInPf = value * 1000;
-
-      let convertedValue = valueInPf;
-      if (toUnit === 'pF') convertedValue = valueInPf;
-      if (toUnit === 'nF') convertedValue = valueInPf / 1000;
-      if (toUnit === 'µF') convertedValue = valueInPf / 1000000;
-
-      return convertedValue < 10 ? 
-        convertedValue.toFixed(2) : 
-        convertedValue.toFixed(1);
-    } else {  // Si es una resistencia
-      let valueInOhms = value;
-      if (fromUnit === 'kΩ') valueInOhms = value * 1000;
-      if (fromUnit === 'MΩ') valueInOhms = value * 1000000;
-
-      let convertedValue = valueInOhms;
-      if (toUnit === 'Ω') convertedValue = valueInOhms;
-      if (toUnit === 'kΩ') convertedValue = valueInOhms / 1000;
-      if (toUnit === 'MΩ') convertedValue = valueInOhms / 1000000;
-
-      // Formatear con 2 decimales si es menor que 10, si no con 1 decimal
-      return convertedValue < 10 ? 
-        convertedValue.toFixed(2) : 
-        convertedValue.toFixed(1);
-    }
-  };
-
-  // Actualizar handleResultUnitChange
-  const handleResultUnitChange = (param: string, newUnit: string) => {
+  const handleResultUnitChange = (param: keyof Results, newUnit: string) => {
     if (!results) return;
 
-    const currentUnit = resultUnits[param as keyof typeof resultUnits];
-    const currentValue = parseFloat(results[param as keyof typeof results] as string);
+    const value = results[param];
+    if (typeof value !== 'string') return;
     
-    const newValue = formatValueWithUnit(currentValue, currentUnit, newUnit);
+    const currentValue = parseFloat(value);
+    let newValue = currentValue;
 
-    // Actualizar tanto los resultados como el diagrama
-    setResults(prev => ({
-      ...prev!,
-      [param]: newValue
-    }));
+    if (param === 'R' || param === 'Ra' || param === 'Rf' || param === 'R_half') {
+      // Para resistencias
+      const baseValue = currentValue * (resultUnits[param] === 'kΩ' ? 1000 : resultUnits[param] === 'MΩ' ? 1000000 : 1);
+      if (newUnit === 'kΩ') newValue = baseValue / 1000;
+      else if (newUnit === 'MΩ') newValue = baseValue / 1000000;
+      else newValue = baseValue;
+    } else if (param === 'C' || param === 'C_double') {
+      // Para capacitores (C y 2C por separado)
+      const baseValue = currentValue * (
+        resultUnits[param === 'C' ? 'C' : 'C_double'] === 'µF' ? 1e-6 : 
+        resultUnits[param === 'C' ? 'C' : 'C_double'] === 'nF' ? 1e-9 : 
+        1e-12
+      );
+      if (newUnit === 'µF') newValue = baseValue * 1e6;
+      else if (newUnit === 'nF') newValue = baseValue * 1e9;
+      else newValue = baseValue * 1e12;
+    }
 
-    setResultUnits(prev => ({
-      ...prev,
+    setResults(prevResults => {
+      if (!prevResults) return prevResults;
+      return {
+        ...prevResults,
+        [param]: newValue.toFixed(2)
+      };
+    });
+
+    setResultUnits(prevUnits => ({
+      ...prevUnits,
       [param]: newUnit
     }));
-
-    // Actualizar valores en el diagrama del circuito
-    updateCircuitValues(param, newValue, newUnit);
   };
 
   // Función para actualizar los valores en el diagrama
@@ -811,21 +839,31 @@ export const RechazaBandaFilter = () => {
                   />
                   {/* Valores superpuestos */}
                   <div className="circuit-values">
-                    <span className="value C-left-value">
-                      {`${results.C.split(' ')[0]} ${resultUnits.C}`}
-                    </span>
-                    <span className="value C-center-value">
-                      {`${results.C.split(' ')[0]} ${resultUnits.C}`}
-                    </span>
-                    <span className="value R-value">
-                      {`${results.R} ${resultUnits.R}`}
-                    </span>
-                    <span className="value Rf-value">
-                      {`${results.Rf} ${resultUnits.Rf}`}
-                    </span>
-                    <span className="value Ra-value">
-                      {`${results.Ra} ${resultUnits.Ra}`}
-                    </span>
+                    <div className="value-container left-capacitor">
+                      <span className="value C-left-value">
+                        {`${results.C} ${resultUnits.C}`}
+                      </span>
+                    </div>
+                    <div className="value-container center-capacitor">
+                      <span className="value C-center-value">
+                        {`${results.C_double} ${resultUnits.C_double}`}
+                      </span>
+                    </div>
+                    <div className="value-container resistor">
+                      <span className="value R-value">
+                        {`${results.R} ${resultUnits.R}`}
+                      </span>
+                    </div>
+                    <div className="value-container rf-resistor">
+                      <span className="value Rf-value">
+                        {`${results.Rf} ${resultUnits.Rf}`}
+                      </span>
+                    </div>
+                    <div className="value-container ra-resistor">
+                      <span className="value Ra-value">
+                        {`${results.Ra} ${resultUnits.Ra}`}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </Grid>
@@ -871,56 +909,140 @@ export const RechazaBandaFilter = () => {
                     <span>Factor Q:</span>
                     <span>{results.Q}</span>
                   </div>
-                  <div className="result-item">
-                    <span>Resistencia R:</span>
-                    <div className="result-value-with-unit">
-                      <span>{results.R}</span>
-                      <Select
-                        value={resultUnits.R}
-                        onChange={(e) => handleResultUnitChange('R', e.target.value)}
-                        size="small"
-                        className="unit-select-small"
-                      >
-                        <MenuItem value="Ω">Ω</MenuItem>
-                        <MenuItem value="kΩ">kΩ</MenuItem>
-                        <MenuItem value="MΩ">MΩ</MenuItem>
-                      </Select>
-                    </div>
-                  </div>
                   {capacitorMode === 'C' ? (
-                    <div className="result-item">
-                      <span>Capacitor C:</span>
-                      <div className="result-value-with-unit">
-                        <span>{results.C}</span>
-                        <Select
-                          value={resultUnits.C}
-                          onChange={(e) => handleResultUnitChange('C', e.target.value)}
-                          size="small"
-                          className="unit-select-small"
-                        >
-                          <MenuItem value="pF">pF</MenuItem>
-                          <MenuItem value="nF">nF</MenuItem>
-                          <MenuItem value="µF">µF</MenuItem>
-                        </Select>
+                    <>
+                      <div className="result-item">
+                        <span>Capacitor C:</span>
+                        <div className="result-value-with-unit">
+                          <span>{results.C}</span>
+                          <Select
+                            value={resultUnits.C}
+                            onChange={(e) => handleResultUnitChange('C', e.target.value)}
+                            size="small"
+                            className="unit-select-small"
+                          >
+                            <MenuItem value="pF">pF</MenuItem>
+                            <MenuItem value="nF">nF</MenuItem>
+                            <MenuItem value="µF">µF</MenuItem>
+                          </Select>
+                        </div>
                       </div>
-                    </div>
+                      <div className="result-item">
+                        <span>Capacitor 2C:</span>
+                        <div className="result-value-with-unit">
+                          <span>{results.C_double}</span>
+                          <Select
+                            value={resultUnits.C_double}
+                            onChange={(e) => handleResultUnitChange('C_double', e.target.value)}
+                            size="small"
+                            className="unit-select-small"
+                          >
+                            <MenuItem value="pF">pF</MenuItem>
+                            <MenuItem value="nF">nF</MenuItem>
+                            <MenuItem value="µF">µF</MenuItem>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="result-item">
+                        <span>Resistencia R:</span>
+                        <div className="result-value-with-unit">
+                          <span>{results.R}</span>
+                          <Select
+                            value={resultUnits.R}
+                            onChange={(e) => handleResultUnitChange('R', e.target.value)}
+                            size="small"
+                            className="unit-select-small"
+                          >
+                            <MenuItem value="Ω">Ω</MenuItem>
+                            <MenuItem value="kΩ">kΩ</MenuItem>
+                            <MenuItem value="MΩ">MΩ</MenuItem>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="result-item">
+                        <span>Resistencia R/2:</span>
+                        <div className="result-value-with-unit">
+                          <span>{results.R_half}</span>
+                          <Select
+                            value={resultUnits.R_half}
+                            onChange={(e) => handleResultUnitChange('R_half', e.target.value)}
+                            size="small"
+                            className="unit-select-small"
+                          >
+                            <MenuItem value="Ω">Ω</MenuItem>
+                            <MenuItem value="kΩ">kΩ</MenuItem>
+                            <MenuItem value="MΩ">MΩ</MenuItem>
+                          </Select>
+                        </div>
+                      </div>
+                    </>
                   ) : (
-                    <div className="result-item">
-                      <span>Resistencia R:</span>
-                      <div className="result-value-with-unit">
-                        <span>{results.R}</span>
-                        <Select
-                          value={resultUnits.R}
-                          onChange={(e) => handleResultUnitChange('R', e.target.value)}
-                          size="small"
-                          className="unit-select-small"
-                        >
-                          <MenuItem value="Ω">Ω</MenuItem>
-                          <MenuItem value="kΩ">kΩ</MenuItem>
-                          <MenuItem value="MΩ">MΩ</MenuItem>
-                        </Select>
+                    <>
+                      <div className="result-item">
+                        <span>Resistencia R:</span>
+                        <div className="result-value-with-unit">
+                          <span>{results.R}</span>
+                          <Select
+                            value={resultUnits.R}
+                            onChange={(e) => handleResultUnitChange('R', e.target.value)}
+                            size="small"
+                            className="unit-select-small"
+                          >
+                            <MenuItem value="Ω">Ω</MenuItem>
+                            <MenuItem value="kΩ">kΩ</MenuItem>
+                            <MenuItem value="MΩ">MΩ</MenuItem>
+                          </Select>
+                        </div>
                       </div>
-                    </div>
+                      <div className="result-item">
+                        <span>Resistencia R/2:</span>
+                        <div className="result-value-with-unit">
+                          <span>{results.R_half}</span>
+                          <Select
+                            value={resultUnits.R_half}
+                            onChange={(e) => handleResultUnitChange('R_half', e.target.value)}
+                            size="small"
+                            className="unit-select-small"
+                          >
+                            <MenuItem value="Ω">Ω</MenuItem>
+                            <MenuItem value="kΩ">kΩ</MenuItem>
+                            <MenuItem value="MΩ">MΩ</MenuItem>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="result-item">
+                        <span>Capacitor C:</span>
+                        <div className="result-value-with-unit">
+                          <span>{results.C}</span>
+                          <Select
+                            value={resultUnits.C}
+                            onChange={(e) => handleResultUnitChange('C', e.target.value)}
+                            size="small"
+                            className="unit-select-small"
+                          >
+                            <MenuItem value="pF">pF</MenuItem>
+                            <MenuItem value="nF">nF</MenuItem>
+                            <MenuItem value="µF">µF</MenuItem>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="result-item">
+                        <span>Capacitor 2C:</span>
+                        <div className="result-value-with-unit">
+                          <span>{results.C_double}</span>
+                          <Select
+                            value={resultUnits.C_double}
+                            onChange={(e) => handleResultUnitChange('C_double', e.target.value)}
+                            size="small"
+                            className="unit-select-small"
+                          >
+                            <MenuItem value="pF">pF</MenuItem>
+                            <MenuItem value="nF">nF</MenuItem>
+                            <MenuItem value="µF">µF</MenuItem>
+                          </Select>
+                        </div>
+                      </div>
+                    </>
                   )}
                   {resistanceMode === 'Ra' ? (
                     <div className="result-item">
@@ -967,11 +1089,35 @@ export const RechazaBandaFilter = () => {
                   </Typography>
                   <div className="result-item">
                     <span>f₁:</span>
-                    <span>{results.f1}</span>
+                    <div className="result-value-with-unit">
+                      <span>{results.f1}</span>
+                      <Select
+                        value={units.f1}
+                        onChange={(e) => handleUnitChange('f1', e.target.value)}
+                        size="small"
+                        className="unit-select-small"
+                      >
+                        <MenuItem value="Hz">Hz</MenuItem>
+                        <MenuItem value="kHz">kHz</MenuItem>
+                        <MenuItem value="MHz">MHz</MenuItem>
+                      </Select>
+                    </div>
                   </div>
                   <div className="result-item">
                     <span>f₂:</span>
-                    <span>{results.f2}</span>
+                    <div className="result-value-with-unit">
+                      <span>{results.f2}</span>
+                      <Select
+                        value={units.f2}
+                        onChange={(e) => handleUnitChange('f2', e.target.value)}
+                        size="small"
+                        className="unit-select-small"
+                      >
+                        <MenuItem value="Hz">Hz</MenuItem>
+                        <MenuItem value="kHz">kHz</MenuItem>
+                        <MenuItem value="MHz">MHz</MenuItem>
+                      </Select>
+                    </div>
                   </div>
                 </Box>
               </Grid>
@@ -984,7 +1130,7 @@ export const RechazaBandaFilter = () => {
                 </Typography>
                 <div className="transfer-function">
                   <MathJax>
-                    {"\\[H(s) = \\frac{\\frac{1}{nRC}\\left(1 + \\frac{R_f}{R_a}\\right)s}{s^2 + \\frac{1}{RC}\\left(2 + \\frac{1}{n}\\left(1-\\frac{R_f}{R_a}\\right)\\right)s + \\frac{2}{nR^2C^2}}\\]"}
+                    {"\\[H(s) = \\frac{(1 + \\frac{R_f}{R_a})(s^2 + \\frac{1}{R^2C^2})}{s^2 + \\frac{2}{RC}s + \\frac{1}{R^2C^2}}\\]"}
                   </MathJax>
                 </div>
 
