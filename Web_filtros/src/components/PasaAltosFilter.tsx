@@ -102,6 +102,12 @@ export const PasaAltosFilter = () => {
       // Calcular nR (siempre)
       const nR = n * R;
 
+      // Calcular Q para el filtro pasa altos
+      const Q = 1 / Math.sqrt(2);  // Valor típico para respuesta Butterworth
+
+      // Inicializar bodeData como un array vacío
+      const bodeData: Array<{x: number, y: number}> = [];
+
       return {
         wo: (wo/(2*Math.PI)).toFixed(2) + ' Hz',
         n: n.toFixed(3),

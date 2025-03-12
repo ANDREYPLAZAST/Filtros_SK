@@ -631,7 +631,7 @@ export const PasaBajosFilter = () => {
                   </Typography>
                   <div className="transfer-function calculated">
                     <MathJax>
-                      {`\\[H(s) = \\frac{${(1/(parseFloat(results.nR) * Math.pow(parseFloat(results.C),2))).toFixed(2)}(1 + ${(parseFloat(results.Rf)/parseFloat(results.Ra)).toFixed(2)})}{s^2 + ${(1/(parseFloat(results.nR) * parseFloat(results.C)) * (2 * parseFloat(results.n) - parseFloat(results.Rf)/parseFloat(results.Ra))).toFixed(2)}s + ${(1/(parseFloat(results.nR) * Math.pow(parseFloat(results.R),2) * Math.pow(parseFloat(results.C),2))).toFixed(2)}}\\]`}
+                      {``}
                     </MathJax>
                   </div>
                 </Box>
