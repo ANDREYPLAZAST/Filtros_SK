@@ -32,8 +32,8 @@ ChartJS.register(
 
 // Definir la función fuera del calculateValues
 const calcularFuncionTransferencia = (R: number, C: number, Rf: number, Ra: number) => {
-  // Log inicial para verificar las unidades
-  console.log('Valores de entrada:', {
+  // Asegurarse de que R esté en ohms y C en faradios
+  console.log('Valores de entrada (unidades base):', {
     R: `${R} ohms`,
     C: `${C} F`,
     Rf: `${Rf} ohms`,
@@ -49,9 +49,9 @@ const calcularFuncionTransferencia = (R: number, C: number, Rf: number, Ra: numb
   // Calcular coeficiente de s en el denominador (2/RC)
   const coef_s = 2/(R*C);
 
-  // Formatear la función de transferencia
-  const numerador = `${ganancia.toFixed(3)}(s^2 + \\frac{1}{${R.toExponential(2)}\\cdot${C.toExponential(2)}^2})`;
-  const denominador = `s^2 + \\frac{2}{${R.toExponential(2)}\\cdot${C.toExponential(2)}}s + \\frac{1}{${R.toExponential(2)}^2\\cdot${C.toExponential(2)}^2}`;
+  // Formatear la función de transferencia usando notación científica para valores muy grandes/pequeños
+  const numerador = `${ganancia.toFixed(3)}(s^2 + ${termino_independiente.toExponential(3).replace('+', '')})`;
+  const denominador = `s^2 + ${coef_s.toExponential(3).replace('+', '')}s + ${termino_independiente.toExponential(3).replace('+', '')}`;
 
   return { 
     numerador, 
@@ -72,6 +72,20 @@ interface SwitchEvent {
     value?: string;
   };
 }
+
+interface ResultUnits {
+  R: string;
+  Ra: string;
+  Rf: string;
+  C: string;
+  C_double: string;
+  R_half: string;
+}
+
+const formatDisplayValue = (valor: number): string => {
+  if (valor === 0) return "0.00";
+  return valor.toFixed(2);
+};
 
 export const RechazaBandaFilter = () => {
   const [inputs, setInputs] = useState({
@@ -117,6 +131,14 @@ export const RechazaBandaFilter = () => {
       den_s: number;
       den_ind: number;
     };
+    displayed: {
+      R: string;
+      R_half: string;
+      C: string;
+      C_double: string;
+      Rf: string;
+      Ra: string;
+    };
   }
 
   const [results, setResults] = useState<Results | null>(null);
@@ -128,12 +150,12 @@ export const RechazaBandaFilter = () => {
   const [resistanceMode, setResistanceMode] = useState('Ra'); // 'Ra' o 'Rf'
 
   const [resultUnits, setResultUnits] = useState({
-    R: 'kΩ',
-    Ra: 'kΩ',
-    Rf: 'kΩ',
+    R: 'Ω',
+    Ra: 'Ω',
+    Rf: 'Ω',
     C: 'nF',
     C_double: 'nF',
-    R_half: 'kΩ'  // Agregar unidad independiente para R/2
+    R_half: 'Ω'  // Agregar unidad independiente para R/2
   });
 
   const [darkMode] = useState(false);
@@ -237,48 +259,32 @@ export const RechazaBandaFilter = () => {
         Ra
       );
 
-      // Convertir valores a las unidades seleccionadas para mostrar
-      const convertToSelectedUnit = (value: number, type: 'R' | 'C', unitType?: 'R' | 'Ra' | 'Rf') => {
-        if (type === 'R') {
-          // Convertir de ohms a la unidad seleccionada
-          const unit = unitType ? resultUnits[unitType] : resultUnits.R;
-          if (unit === 'kΩ') return value / 1000;
-          if (unit === 'MΩ') return value / 1000000;
-          return value;
-        } else {
-          // Convertir de faradios a la unidad seleccionada
-          if (resultUnits.C === 'µF') return value * 1e6;
-          if (resultUnits.C === 'nF') return value * 1e9;
-          return value * 1e12;
-        }
-      };
-
-      // Formatear valores con dos decimales y mantener ceros iniciales
-      const formatearValor = (valor: number) => {
-        if (valor === 0) return "0.00";
-        return valor.toFixed(2);
-      };
-
-      // Convertir y formatear valores para mostrar
-      const calculatedResults = {
+      // Formatear los valores iniciales
+      return {
         Q: Q.toFixed(2),
-        R: formatearValor(convertToSelectedUnit(R, 'R')),
-        R_half: formatearValor(convertToSelectedUnit(R_half, 'R')),
-        C: formatearValor(convertToSelectedUnit(C, 'C')),
-        C_double: formatearValor(convertToSelectedUnit(C_double, 'C')),
-        Rf: formatearValor(convertToSelectedUnit(Rf, 'R', 'Rf')),
-        Ra: formatearValor(convertToSelectedUnit(Ra, 'R', 'Ra')),
-        fo: formatearValor(fo),
-        BW: formatearValor(BW),
-        f1: formatearValor(f1),
-        f2: formatearValor(f2),
+        R: R.toString(),
+        R_half: R_half.toString(),
+        C: C.toString(),
+        C_double: C_double.toString(),
+        Rf: Rf.toString(),
+        Ra: Ra.toString(),
+        fo: fo.toString(),
+        BW: BW.toString(),
+        f1: f1.toString(),
+        f2: f2.toString(),
         bodeData: [],
         numerador,
         denominador,
-        coeficientes
+        coeficientes,
+        displayed: {
+          R: formatDisplayValue(R),
+          R_half: formatDisplayValue(R_half),
+          C: formatDisplayValue(C),
+          C_double: formatDisplayValue(C_double),
+          Rf: formatDisplayValue(Rf),
+          Ra: formatDisplayValue(Ra)
+        }
       };
-
-      return calculatedResults;
     } catch (error) {
       console.error('Error en cálculos:', error);
       throw error;
@@ -331,6 +337,16 @@ export const RechazaBandaFilter = () => {
 
   const handleCalculate = () => {
     try {
+      // Reiniciar las unidades a valores por defecto
+      setResultUnits({
+        R: 'Ω',
+        Ra: 'Ω',
+        Rf: 'Ω',
+        C: 'nF',
+        C_double: 'nF',
+        R_half: 'Ω'
+      });
+
       const calculatedResults = calculateValues();
       
       // Generar datos de Bode usando los coeficientes
@@ -404,7 +420,7 @@ export const RechazaBandaFilter = () => {
     }
   } as const;
 
-  const handleResultUnitChange = (param: keyof Results, newUnit: string) => {
+  const handleResultUnitChange = (param: keyof ResultUnits, newUnit: string) => {
     if (!results) return;
 
     const value = results[param];
@@ -420,7 +436,7 @@ export const RechazaBandaFilter = () => {
       else if (newUnit === 'MΩ') newValue = baseValue / 1000000;
       else newValue = baseValue;
     } else if (param === 'C' || param === 'C_double') {
-      // Para capacitores (C y 2C por separado)
+      // Para capacitores
       const baseValue = currentValue * (
         resultUnits[param === 'C' ? 'C' : 'C_double'] === 'µF' ? 1e-6 : 
         resultUnits[param === 'C' ? 'C' : 'C_double'] === 'nF' ? 1e-9 : 
@@ -431,11 +447,17 @@ export const RechazaBandaFilter = () => {
       else newValue = baseValue * 1e12;
     }
 
+    // Formatear el valor con dos decimales
+    const formattedValue = formatDisplayValue(newValue);
+
     setResults(prevResults => {
       if (!prevResults) return prevResults;
       return {
         ...prevResults,
-        [param]: newValue.toFixed(2)
+        displayed: {
+          ...prevResults.displayed,
+          [param]: formattedValue
+        }
       };
     });
 
@@ -443,6 +465,9 @@ export const RechazaBandaFilter = () => {
       ...prevUnits,
       [param]: newUnit
     }));
+
+    // Actualizar los valores en el esquemático con dos decimales
+    updateCircuitValues(param, formattedValue, newUnit);
   };
 
   // Función para actualizar los valores en el diagrama
@@ -839,29 +864,34 @@ export const RechazaBandaFilter = () => {
                   />
                   {/* Valores superpuestos */}
                   <div className="circuit-values">
-                    <div className="value-container left-capacitor">
-                      <span className="value C-left-value">
-                        {`${results.C} ${resultUnits.C}`}
-                      </span>
-                    </div>
-                    <div className="value-container center-capacitor">
-                      <span className="value C-center-value">
-                        {`${results.C_double} ${resultUnits.C_double}`}
-                      </span>
-                    </div>
-                    <div className="value-container resistor">
+                    <div className="value-container">
                       <span className="value R-value">
-                        {`${results.R} ${resultUnits.R}`}
+                        {`${results.displayed.R} ${resultUnits.R}`}
                       </span>
                     </div>
-                    <div className="value-container rf-resistor">
+                    <div className="value-container">
+                      <span className="value C-value">
+                        {`${results.displayed.C} ${resultUnits.C}`}
+                      </span>
+                    </div>
+                    <div className="value-container">
+                      <span className="value C-double-value">
+                        {`${results.displayed.C_double} ${resultUnits.C_double}`}
+                      </span>
+                    </div>
+                    <div className="value-container">
+                      <span className="value R-half-value">
+                        {`${results.displayed.R_half} ${resultUnits.R_half}`}
+                      </span>
+                    </div>
+                    <div className="value-container">
                       <span className="value Rf-value">
-                        {`${results.Rf} ${resultUnits.Rf}`}
+                        {`${results.displayed.Rf} ${resultUnits.Rf}`}
                       </span>
                     </div>
-                    <div className="value-container ra-resistor">
+                    <div className="value-container">
                       <span className="value Ra-value">
-                        {`${results.Ra} ${resultUnits.Ra}`}
+                        {`${results.displayed.Ra} ${resultUnits.Ra}`}
                       </span>
                     </div>
                   </div>
