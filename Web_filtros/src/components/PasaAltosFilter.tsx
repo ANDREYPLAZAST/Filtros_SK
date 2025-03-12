@@ -3,10 +3,64 @@ import { Grid, Typography, Box, TextField, Button, MenuItem, Select, FormControl
 import '../styles/Filter.css';
 import circuitImageBasic from '../assets/PASAALTOS.png';
 import circuitImageWithValues from '../assets/PASAALTOS2.png';
+import { Line } from 'react-chartjs-2';
+import { MathJax, MathJaxContext } from 'better-react-mathjax';
+
+const bodeOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      display: false
+    }
+  },
+  scales: {
+    x: {
+      type: 'logarithmic' as const,
+      position: 'bottom' as const,
+      title: {
+        display: true,
+        text: 'Frecuencia (Hz)'
+      }
+    },
+    y: {
+      type: 'linear' as const,
+      position: 'left' as const,
+      title: {
+        display: true,
+        text: 'Magnitud (dB)'
+      }
+    }
+  }
+};
+
+type ResultUnits = {
+  wo: string;
+  R: string;
+  C: string;
+  Rf: string;
+  Ra: string;
+  nR: string;
+};
+
+type Results = {
+  wo: string;
+  n: string;
+  Q: string;
+  R: string;
+  C: string;
+  Rf: string;
+  Ra: string;
+  nR: string;
+  bodeData: Array<{x: number, y: number}>;
+  numerador: string;
+  denominador: string;
+  displayed: ResultUnits;
+};
 
 export const PasaAltosFilter = () => {
   const [inputs, setInputs] = useState({
     fo: '',
+    Q: '',
     A: '',
     C: '',
     R: '',
@@ -22,21 +76,19 @@ export const PasaAltosFilter = () => {
     Rf: 'Ω'
   });
 
-  const [results, setResults] = useState<{
-    wo: string;
-    n: string;
-    Q: string;
-    R: string;
-    C: string;
-    nR: string;
-    Rf: string;
-    Ra: string;
-    bodeData: Array<{x: number, y: number}>;
-  } | null>(null);
-
+  const [results, setResults] = useState<Results | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [capacitorMode, setCapacitorMode] = useState('C');
   const [resistanceMode, setResistanceMode] = useState('Ra');
+
+  const [resultUnits, setResultUnits] = useState({
+    wo: 'Hz',
+    R: 'Ω',
+    C: 'nF',
+    Rf: 'Ω',
+    Ra: 'Ω',
+    nR: 'Ω'
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputs({
@@ -52,81 +104,133 @@ export const PasaAltosFilter = () => {
     });
   };
 
+  const calcularFuncionTransferencia = (n: number, R: number, C: number, Rf: number, Ra: number) => {
+    console.log('Valores de entrada:', {
+      n,
+      R: `${R} ohms`,
+      C: `${C} F`,
+      Rf: `${Rf} ohms`,
+      Ra: `${Ra} ohms`
+    });
+
+    // Calcular coeficientes para el filtro pasa altos
+    const num_coef = (1 + Rf/Ra);
+    const den_s_coef = (1/(n * R * C)) * (2 * n - Rf/Ra);
+    const den_ind = 1/(n * R * R * C * C);
+
+    // Formatear la función de transferencia sin el signo +
+    const numerador = `${num_coef.toExponential(3).replace('+', '')}s^2`;
+    const denominador = `s^2 + ${den_s_coef.toExponential(3).replace('+', '')}s + ${den_ind.toExponential(3).replace('+', '')}`;
+
+    return { 
+      numerador: numerador,
+      denominador: denominador,
+      coeficientes: {
+        num: num_coef,
+        den_s: den_s_coef,
+        den_ind: den_ind
+      }
+    };
+  };
+
   const calculateValues = () => {
     try {
       // Convertir frecuencia a Hz
       const fo = parseFloat(inputs.fo) * (units.fo === 'kHz' ? 1000 : units.fo === 'MHz' ? 1000000 : 1);
       const wo = 2 * Math.PI * fo;
-      console.log('Frecuencias:', { fo, wo });
 
       // Ganancia en dB a lineal
       const A_db = parseFloat(inputs.A);
       const A = Math.pow(10, A_db/20);
-      console.log('Ganancia:', { A_db, A });
 
-      // Cálculo de n usando la ecuación n² + (2 - A²)n + 1 = 0
-      const a = 1;
-      const b = 2 - A * A;
-      const c = 1;
+      // Factor de calidad Q
+      const Q = parseFloat(inputs.Q);
+
+      // Cálculo de n usando la ecuación cuadrática
+      const a = 4;
+      const b = 4 - 4*A - 1/(Q*Q);
+      const c = 1 - 2*A + A*A;
       
       const discriminant = b * b - 4 * a * c;
       const n1 = (-b + Math.sqrt(discriminant)) / (2 * a);
       const n2 = (-b - Math.sqrt(discriminant)) / (2 * a);
       const n = Math.max(n1, n2);
-      console.log('Cálculo de n:', { a, b, c, discriminant, n1, n2, n });
 
       // Cálculos de C y R
       let C, R;
       if (capacitorMode === 'C') {
         C = parseFloat(inputs.C) * (units.C === 'µF' ? 1e-6 : units.C === 'nF' ? 1e-9 : 1e-12);
-        R = 1 / (wo * C * Math.sqrt(n));
-        console.log('Modo C:', { C_input: C, R_calculado: R });
+        R = 1 / (wo * wo * n * C);
       } else {
         R = parseFloat(inputs.R) * (units.R === 'kΩ' ? 1000 : 1);
-        C = 1 / (wo * R * Math.sqrt(n));
-        console.log('Modo R:', { R_input: R, C_calculado: C });
+        C = 1 / (wo * wo * n * R);
       }
 
       // Cálculos de Ra y Rf
       let Ra, Rf;
       if (resistanceMode === 'Ra') {
         Ra = parseFloat(inputs.Ra) * (units.Ra === 'kΩ' ? 1000 : 1);
-        Rf = Ra * (2 * n + 1);
-        console.log('Modo Ra:', { Ra_input: Ra, Rf_calculado: Rf });
+        Rf = Ra * (A - 1);
       } else {
         Rf = parseFloat(inputs.Rf) * (units.Rf === 'kΩ' ? 1000 : 1);
-        Ra = Rf / (2 * n + 1);
-        console.log('Modo Rf:', { Rf_input: Rf, Ra_calculado: Ra });
+        Ra = Rf / (A - 1);
       }
 
-      // Calcular nR (siempre)
+      // Calcular nR para el filtro pasa altos
       const nR = n * R;
 
-      // Calcular Q para el filtro pasa altos
-      const Q = 1 / Math.sqrt(2);  // Valor típico para respuesta Butterworth
+      // Calcular la función de transferencia
+      const { numerador, denominador, coeficientes } = calcularFuncionTransferencia(n, R, C, Rf, Ra);
 
-      // Inicializar bodeData como un array vacío
-      const bodeData: Array<{x: number, y: number}> = [];
+      // Generar datos para el diagrama de Bode
+      const bodeData = generateBodeData(coeficientes.num, coeficientes.den_s, coeficientes.den_ind);
 
       return {
-        wo: (wo/(2*Math.PI)).toFixed(2) + ' Hz',
+        wo: (wo/(2*Math.PI)).toFixed(2),
         n: n.toFixed(3),
         Q: Q.toFixed(3),
-        R: (R/1000).toFixed(2) + ' kΩ',
-        C: C < 1e-9 ? 
-           (C*1e12).toFixed(2) + ' pF' : 
-           C < 1e-6 ? 
-           (C*1e9).toFixed(2) + ' nF' : 
-           (C*1e6).toFixed(2) + ' µF',
-        nR: (nR/1000).toFixed(2) + ' kΩ',
-        Rf: (Rf/1000).toFixed(2) + ' kΩ',
-        Ra: (Ra/1000).toFixed(2) + ' kΩ',
-        bodeData
+        R: R.toString(),
+        C: C.toString(),
+        Rf: Rf.toString(),
+        Ra: Ra.toString(),
+        nR: nR.toString(),
+        bodeData,
+        numerador,
+        denominador,
+        displayed: {
+          wo: (wo/(2*Math.PI)).toFixed(2),
+          R: formatNumber(R),
+          Rf: formatNumber(Rf),
+          Ra: formatNumber(Ra),
+          C: formatNumber(C < 1e-9 ? C*1e12 : C < 1e-6 ? C*1e9 : C*1e6),
+          nR: formatNumber(nR)
+        }
       };
     } catch (error) {
       console.error('Error en los cálculos:', error);
       throw error;
     }
+  };
+
+  const generateBodeData = (num_coef: number, den_s_coef: number, den_ind_coef: number) => {
+    const data = [];
+    
+    // Generar puntos para el diagrama de Bode del pasa altos
+    for(let f = 0.1; f <= 1000000; f *= 1.1) {
+      const w = 2 * Math.PI * f;
+      const s_squared = -(w * w);
+      const s_term = den_s_coef * w;
+      
+      // Para pasa altos, el numerador incluye s^2
+      const numerator = num_coef * w * w;
+      const denominator = Math.sqrt(
+        Math.pow(s_squared - den_ind_coef, 2) + 
+        Math.pow(s_term, 2)
+      );
+      const magnitude = 20 * Math.log10(numerator/denominator);
+      data.push({x: f, y: magnitude});
+    }
+    return data;
   };
 
   const handleCalculate = () => {
@@ -139,280 +243,513 @@ export const PasaAltosFilter = () => {
     }
   };
 
+  const formatNumber = (num: number): string => {
+    return Number(num).toFixed(2);
+  };
+
+  const handleResultUnitChange = (param: keyof ResultUnits, newUnit: string) => {
+    if (!results) return;
+
+    // Obtener el valor base (siempre en unidades base: Ω, F, Hz)
+    const baseValue = parseFloat(results[param]);
+    let convertedValue: number;
+
+    // Convertir según el tipo de parámetro
+    if (param === 'C') {
+      // Convertir a la unidad deseada desde Faradios
+      if (newUnit === 'pF') {
+        convertedValue = baseValue * 1e12;
+      } else if (newUnit === 'nF') {
+        convertedValue = baseValue * 1e9;
+      } else { // µF
+        convertedValue = baseValue * 1e6;
+      }
+    } else if (param === 'wo') {
+      // Convertir entre Hz y rad/s
+      convertedValue = newUnit === 'Hz' ? baseValue : baseValue * 2 * Math.PI;
+    } else {
+      // Para R, Rf, Ra, nR (resistencias)
+      if (newUnit === 'kΩ') {
+        convertedValue = baseValue / 1000;
+      } else if (newUnit === 'MΩ') {
+        convertedValue = baseValue / 1000000;
+      } else { // Ω
+        convertedValue = baseValue;
+      }
+    }
+
+    // Actualizar las unidades
+    setResultUnits(prev => ({
+      ...prev,
+      [param]: newUnit
+    }));
+
+    // Actualizar los valores mostrados
+    setResults(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        displayed: {
+          ...prev.displayed,
+          [param]: formatNumber(convertedValue)
+        }
+      };
+    });
+  };
+
   return (
-    <div className="filter-container">
-      <Grid container spacing={4}>
-        {/* Columna izquierda - Descripción */}
-        <Grid item xs={12} md={6}>
-          <Box className="description-box">
-            <Typography 
-              variant="h5" 
-              sx={{ 
-                fontSize: '1.5rem',
-                fontWeight: 600,
-                marginBottom: '2.5rem',
-                textAlign: 'center',
-                color: '#00ff9d',
-                '&.MuiTypography-root': {
-                  color: '#00ff9d !important'
-                }
-              }}
-            >
-              Descripción de los parámetros de entrada
-            </Typography>
-            <div className="parameter-info">
-              <h4>Frecuencia de corte (fo):</h4>
-              <p>Frecuencia a la cual la ganancia cae 3dB respecto a la banda de paso. Define el límite inferior de la banda pasante.</p>
-              
-              <h4>Ganancia (A):</h4>
-              <p>Amplificación en la banda de paso, expresada en decibelios (dB). Determina la amplificación de las señales en la banda pasante.</p>
-              
-              <h4>Capacitor (C):</h4>
-              <p>Valor del capacitor de referencia para el diseño. Se recomienda usar valores comerciales entre 100pF y 100nF para frecuencias altas, y entre 100nF y 10µF para frecuencias bajas.</p>
-
-              <h4>Resistencia Ra:</h4>
-              <p>Resistencia de entrada del circuito. Afecta la impedancia de entrada y la ganancia total. Se recomienda usar valores entre 1kΩ y 100kΩ.</p>
-
-              <div className="design-notes">
-                <h4>Notas de diseño:</h4>
-                <ul>
-                  <li>La frecuencia angular ωo = 2πfo</li>
-                  <li>La pendiente de subida es de +40 dB/década antes de fo</li>
-                  <li>El factor n determina la respuesta del filtro</li>
-                </ul>
-              </div>
-            </div>
-          </Box>
-        </Grid>
-
-        {/* Columna derecha - Parámetros de entrada */}
-        <Grid item xs={12} md={6}>
-          <Box className="parameters-box">
-            <Typography 
-              variant="h5" 
-              sx={{ 
-                fontSize: '1.5rem',
-                fontWeight: 600,
-                marginBottom: '2.5rem',
-                textAlign: 'center',
-                color: '#00ff9d',
-                '&.MuiTypography-root': {
-                  color: '#00ff9d !important'
-                }
-              }}
-            >
-              Parámetros de entrada
-            </Typography>
-
-            <div className="input-field-container">
-              <TextField
-                className="cyber-input"
-                label="Frecuencia de corte"
-                name="fo"
-                value={inputs.fo}
-                onChange={handleInputChange}
-                type="number"
-                inputProps={{ step: "any" }}
-                fullWidth
-              />
-              <Select
-                value={units.fo}
-                onChange={(e) => handleUnitChange('fo', e.target.value)}
-                className="unit-select"
+    <MathJaxContext>
+      <div className="filter-container">
+        <Grid container spacing={4}>
+          {/* Columna izquierda - Descripción */}
+          <Grid item xs={12} md={6}>
+            <Box className="description-box">
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontSize: '1.5rem',
+                  fontWeight: 600,
+                  marginBottom: '2.5rem',
+                  textAlign: 'center',
+                  color: '#00ff9d',
+                  '&.MuiTypography-root': {
+                    color: '#00ff9d !important'
+                  }
+                }}
               >
-                <MenuItem value="Hz">Hz</MenuItem>
-                <MenuItem value="kHz">kHz</MenuItem>
-                <MenuItem value="MHz">MHz</MenuItem>
-              </Select>
-            </div>
+                Descripción de los parámetros de entrada
+              </Typography>
+              <div className="parameter-info">
+                <h4>Frecuencia de corte (fo):</h4>
+                <p>Frecuencia a la cual la ganancia cae 3dB respecto a la banda de paso. Define el límite inferior de la banda pasante.</p>
+                
+                <h4>Ganancia (A):</h4>
+                <p>Amplificación en la banda de paso, expresada en decibelios (dB). Determina la amplificación de las señales en la banda pasante.</p>
+                
+                <h4>Capacitor (C):</h4>
+                <p>Valor del capacitor de referencia para el diseño. Se recomienda usar valores comerciales entre 100pF y 100nF para frecuencias altas, y entre 100nF y 10µF para frecuencias bajas.</p>
 
-            <div className="input-field-container">
-              <TextField
-                className="cyber-input"
-                label="Ganancia"
-                name="A"
-                value={inputs.A}
-                onChange={handleInputChange}
-                type="number"
-                inputProps={{ step: "any" }}
-                fullWidth
-              />
-            </div>
+                <h4>Resistencia Ra:</h4>
+                <p>Resistencia de entrada del circuito. Afecta la impedancia de entrada y la ganancia total. Se recomienda usar valores entre 1kΩ y 100kΩ.</p>
 
-            {/* Switch para Capacitor/Resistencia */}
-            <div className="calculation-mode-switch">
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={capacitorMode === 'R'}
-                    onChange={(e) => setCapacitorMode(e.target.checked ? 'R' : 'C')}
-                    color="primary"
+                <div className="design-notes">
+                  <h4>Notas de diseño:</h4>
+                  <ul>
+                    <li>La frecuencia angular ωo = 2πfo</li>
+                    <li>La pendiente de subida es de +40 dB/década antes de fo</li>
+                    <li>El factor n determina la respuesta del filtro</li>
+                  </ul>
+                </div>
+
+                <div className="circuit-preview basic-circuit">
+                  <img 
+                    src={circuitImageBasic}
+                    alt="Circuito Pasa Altos Básico"
+                    className="circuit-diagram-preview"
                   />
-                }
-                label={capacitorMode === 'R' ? "Usando Resistencia R" : "Usando Capacitor C"}
-              />
-            </div>
-
-            {capacitorMode === 'C' ? (
-              <div className="input-field-container">
-                <TextField
-                  className="cyber-input"
-                  label="Capacitor"
-                  name="C"
-                  value={inputs.C}
-                  onChange={handleInputChange}
-                  type="number"
-                  inputProps={{ step: "any" }}
-                  fullWidth
-                />
-                <Select
-                  value={units.C}
-                  onChange={(e) => handleUnitChange('C', e.target.value)}
-                  className="unit-select"
-                >
-                  <MenuItem value="pF">pF</MenuItem>
-                  <MenuItem value="nF">nF</MenuItem>
-                  <MenuItem value="µF">µF</MenuItem>
-                </Select>
+                </div>
               </div>
-            ) : (
-              <div className="input-field-container">
-                <TextField
-                  className="cyber-input"
-                  label="Resistencia R"
-                  name="R"
-                  value={inputs.R}
-                  onChange={handleInputChange}
-                  type="number"
-                  inputProps={{ step: "any" }}
-                  fullWidth
-                />
-                <Select
-                  value={units.R}
-                  onChange={(e) => handleUnitChange('R', e.target.value)}
-                  className="unit-select"
-                >
-                  <MenuItem value="Ω">Ω</MenuItem>
-                  <MenuItem value="kΩ">kΩ</MenuItem>
-                </Select>
-              </div>
-            )}
-
-            {/* Switch para Ra/Rf */}
-            <div className="calculation-mode-switch">
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={resistanceMode === 'Rf'}
-                    onChange={(e) => setResistanceMode(e.target.checked ? 'Rf' : 'Ra')}
-                    color="primary"
-                  />
-                }
-                label={resistanceMode === 'Rf' ? "Usando Resistencia Rf" : "Usando Resistencia Ra"}
-              />
-            </div>
-
-            {resistanceMode === 'Ra' ? (
-              <div className="input-field-container">
-                <TextField
-                  className="cyber-input"
-                  label="Resistencia Ra"
-                  name="Ra"
-                  value={inputs.Ra}
-                  onChange={handleInputChange}
-                  type="number"
-                  inputProps={{ step: "any" }}
-                  fullWidth
-                />
-                <Select
-                  value={units.Ra}
-                  onChange={(e) => handleUnitChange('Ra', e.target.value)}
-                  className="unit-select"
-                >
-                  <MenuItem value="Ω">Ω</MenuItem>
-                  <MenuItem value="kΩ">kΩ</MenuItem>
-                </Select>
-              </div>
-            ) : (
-              <div className="input-field-container">
-                <TextField
-                  className="cyber-input"
-                  label="Resistencia Rf"
-                  name="Rf"
-                  value={inputs.Rf}
-                  onChange={handleInputChange}
-                  type="number"
-                  inputProps={{ step: "any" }}
-                  fullWidth
-                />
-                <Select
-                  value={units.Rf}
-                  onChange={(e) => handleUnitChange('Rf', e.target.value)}
-                  className="unit-select"
-                >
-                  <MenuItem value="Ω">Ω</MenuItem>
-                  <MenuItem value="kΩ">kΩ</MenuItem>
-                </Select>
-              </div>
-            )}
-
-            <Button 
-              variant="contained" 
-              className="calculate-button"
-              onClick={handleCalculate}
-            >
-              CALCULAR
-            </Button>
-          </Box>
-        </Grid>
-      </Grid>
-
-      {/* Contenedor de resultados */}
-      {showResults && results && (
-        <div className="results-container">
-          <Typography variant="h5" className="section-title">
-            Resultados del Filtro
-          </Typography>
-
-          {/* Imagen del circuito */}
-          <div className="circuit-image">
-            <img 
-              src={circuitImageBasic} 
-              alt="Circuito Pasa Altos"
-            />
-          </div>
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Box className="result-box">
-                <Typography variant="h6" sx={{ mb: 2, color: 'var(--primary-dark)' }}>
-                  Valores calculados:
-                </Typography>
-                <div className="result-item">
-                  <span>Frecuencia angular (wo):</span>
-                  <span>{results.wo}</span>
-                </div>
-                <div className="result-item">
-                  <span>Factor n:</span>
-                  <span>{results.n}</span>
-                </div>
-                <div className="result-item">
-                  <span>Resistencia nR:</span>
-                  <span>{results.nR}</span>
-                </div>
-                <div className="result-item">
-                  <span>{capacitorMode === 'C' ? 'Resistencia R:' : 'Capacitor C:'}</span>
-                  <span>{capacitorMode === 'C' ? results.R : results.C}</span>
-                </div>
-                <div className="result-item">
-                  <span>Resistencia {resistanceMode === 'Ra' ? 'Rf' : 'Ra'}:</span>
-                  <span>{resistanceMode === 'Ra' ? results.Rf : results.Ra}</span>
-                </div>
-              </Box>
-            </Grid>
+            </Box>
           </Grid>
-        </div>
-      )}
-    </div>
+
+          {/* Columna derecha - Parámetros de entrada */}
+          <Grid item xs={12} md={6}>
+            <Box className="parameters-box">
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontSize: '1.5rem',
+                  fontWeight: 600,
+                  marginBottom: '2.5rem',
+                  textAlign: 'center',
+                  color: '#00ff9d',
+                  '&.MuiTypography-root': {
+                    color: '#00ff9d !important'
+                  }
+                }}
+              >
+                Parámetros de entrada
+              </Typography>
+
+              <div className="input-field-container">
+                <TextField
+                  className="cyber-input"
+                  label="Frecuencia de corte"
+                  name="fo"
+                  value={inputs.fo}
+                  onChange={handleInputChange}
+                  type="number"
+                  inputProps={{ step: "any" }}
+                  fullWidth
+                />
+                <Select
+                  value={units.fo}
+                  onChange={(e) => handleUnitChange('fo', e.target.value)}
+                  className="unit-select"
+                >
+                  <MenuItem value="Hz">Hz</MenuItem>
+                  <MenuItem value="kHz">kHz</MenuItem>
+                  <MenuItem value="MHz">MHz</MenuItem>
+                </Select>
+              </div>
+
+              <div className="input-field-container">
+                <TextField
+                  className="cyber-input"
+                  label="Factor de calidad Q"
+                  name="Q"
+                  value={inputs.Q}
+                  onChange={handleInputChange}
+                  type="number"
+                  inputProps={{ step: "any" }}
+                  fullWidth
+                />
+              </div>
+
+              <div className="input-field-container">
+                <TextField
+                  className="cyber-input"
+                  label="Ganancia"
+                  name="A"
+                  value={inputs.A}
+                  onChange={handleInputChange}
+                  type="number"
+                  inputProps={{ step: "any" }}
+                  fullWidth
+                />
+                <div className="gain-unit">
+                  dB
+                </div>
+              </div>
+
+              {/* Switch para Capacitor/Resistencia */}
+              <div className="calculation-mode-switch">
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={capacitorMode === 'R'}
+                      onChange={(e) => setCapacitorMode(e.target.checked ? 'R' : 'C')}
+                      color="primary"
+                    />
+                  }
+                  label={capacitorMode === 'R' ? "Usando Resistencia R" : "Usando Capacitor C"}
+                />
+              </div>
+
+              {capacitorMode === 'C' ? (
+                <div className="input-field-container">
+                  <TextField
+                    className="cyber-input"
+                    label="Capacitor"
+                    name="C"
+                    value={inputs.C}
+                    onChange={handleInputChange}
+                    type="number"
+                    inputProps={{ step: "any" }}
+                    fullWidth
+                  />
+                  <Select
+                    value={units.C}
+                    onChange={(e) => handleUnitChange('C', e.target.value)}
+                    className="unit-select"
+                  >
+                    <MenuItem value="pF">pF</MenuItem>
+                    <MenuItem value="nF">nF</MenuItem>
+                    <MenuItem value="µF">µF</MenuItem>
+                  </Select>
+                </div>
+              ) : (
+                <div className="input-field-container">
+                  <TextField
+                    className="cyber-input"
+                    label="Resistencia R"
+                    name="R"
+                    value={inputs.R}
+                    onChange={handleInputChange}
+                    type="number"
+                    inputProps={{ step: "any" }}
+                    fullWidth
+                  />
+                  <Select
+                    value={units.R}
+                    onChange={(e) => handleUnitChange('R', e.target.value)}
+                    className="unit-select"
+                  >
+                    <MenuItem value="Ω">Ω</MenuItem>
+                    <MenuItem value="kΩ">kΩ</MenuItem>
+                  </Select>
+                </div>
+              )}
+
+              {/* Switch para Ra/Rf */}
+              <div className="calculation-mode-switch">
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={resistanceMode === 'Rf'}
+                      onChange={(e) => setResistanceMode(e.target.checked ? 'Rf' : 'Ra')}
+                      color="primary"
+                    />
+                  }
+                  label={resistanceMode === 'Rf' ? "Usando Resistencia Rf" : "Usando Resistencia Ra"}
+                />
+              </div>
+
+              {resistanceMode === 'Ra' ? (
+                <div className="input-field-container">
+                  <TextField
+                    className="cyber-input"
+                    label="Resistencia Ra"
+                    name="Ra"
+                    value={inputs.Ra}
+                    onChange={handleInputChange}
+                    type="number"
+                    inputProps={{ step: "any" }}
+                    fullWidth
+                  />
+                  <Select
+                    value={units.Ra}
+                    onChange={(e) => handleUnitChange('Ra', e.target.value)}
+                    className="unit-select"
+                  >
+                    <MenuItem value="Ω">Ω</MenuItem>
+                    <MenuItem value="kΩ">kΩ</MenuItem>
+                  </Select>
+                </div>
+              ) : (
+                <div className="input-field-container">
+                  <TextField
+                    className="cyber-input"
+                    label="Resistencia Rf"
+                    name="Rf"
+                    value={inputs.Rf}
+                    onChange={handleInputChange}
+                    type="number"
+                    inputProps={{ step: "any" }}
+                    fullWidth
+                  />
+                  <Select
+                    value={units.Rf}
+                    onChange={(e) => handleUnitChange('Rf', e.target.value)}
+                    className="unit-select"
+                  >
+                    <MenuItem value="Ω">Ω</MenuItem>
+                    <MenuItem value="kΩ">kΩ</MenuItem>
+                  </Select>
+                </div>
+              )}
+
+              <Button 
+                variant="contained" 
+                className="calculate-button"
+                onClick={handleCalculate}
+              >
+                CALCULAR
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+
+        {/* Contenedor de resultados */}
+        {showResults && results && (
+          <div className="results-container">
+            <Typography variant="h5" className="section-title">
+              Resultados del Filtro
+            </Typography>
+
+            <Grid container spacing={4}>
+              {/* Circuito con valores - Izquierda */}
+              <Grid item xs={12} md={6}>
+                <div className="circuit-preview circuit-with-values">
+                  <img 
+                    src={circuitImageWithValues}
+                    alt="Circuito Pasa Altos con Valores"
+                    className="circuit-diagram-preview"
+                  />
+                  {/* Valores superpuestos */}
+                  <div className="circuit-values">
+                    <span className="value R-value">
+                      {`${results.displayed.R} ${resultUnits.R}`}
+                    </span>
+                    <span className="value C-value">
+                      {`${results.displayed.C} ${resultUnits.C}`}
+                    </span>
+                    <span className="value Rf-value">
+                      {`${results.displayed.Rf} ${resultUnits.Rf}`}
+                    </span>
+                    <span className="value Ra-value">
+                      {`${results.displayed.Ra} ${resultUnits.Ra}`}
+                    </span>
+                  </div>
+                </div>
+              </Grid>
+
+              {/* Diagrama de Bode - Derecha */}
+              <Grid item xs={12} md={6}>
+                <div className="bode-plot">
+                  <Line
+                    data={{
+                      datasets: [{
+                        data: results.bodeData,
+                        borderColor: '#00ff9d',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.4
+                      }]
+                    }}
+                    options={bodeOptions}
+                  />
+                </div>
+              </Grid>
+
+              {/* Valores calculados - Izquierda */}
+              <Grid item xs={12} md={6}>
+                <Box className="result-box">
+                  <Typography variant="h6" sx={{ mb: 2, color: 'var(--primary-dark)' }}>
+                    Valores calculados:
+                  </Typography>
+                  
+                  {/* Frecuencia de corte */}
+                  <div className="result-item">
+                    <span>Frecuencia de corte (fo):</span>
+                    <div className="result-value-with-unit">
+                      <span>{results.displayed.wo}</span>
+                      <Select
+                        value={resultUnits.wo}
+                        onChange={(e) => handleResultUnitChange('wo', e.target.value)}
+                        className="unit-select-small"
+                      >
+                        <MenuItem value="Hz">Hz</MenuItem>
+                        <MenuItem value="rad/s">rad/s</MenuItem>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Factor n */}
+                  <div className="result-item">
+                    <span>Factor n:</span>
+                    <span>{results.n}</span>
+                  </div>
+
+                  {/* Factor Q */}
+                  <div className="result-item">
+                    <span>Factor Q:</span>
+                    <span>{results.Q}</span>
+                  </div>
+
+                  {/* Mostrar R */}
+                  <div className="result-item">
+                    <span>Resistencia R:</span>
+                    <div className="result-value-with-unit">
+                      <span>{results.displayed.R}</span>
+                      <Select
+                        value={resultUnits.R}
+                        onChange={(e) => handleResultUnitChange('R', e.target.value)}
+                        className="unit-select-small"
+                      >
+                        <MenuItem value="Ω">Ω</MenuItem>
+                        <MenuItem value="kΩ">kΩ</MenuItem>
+                        <MenuItem value="MΩ">MΩ</MenuItem>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Mostrar C */}
+                  <div className="result-item">
+                    <span>Capacitor C:</span>
+                    <div className="result-value-with-unit">
+                      <span>{results.displayed.C}</span>
+                      <Select
+                        value={resultUnits.C}
+                        onChange={(e) => handleResultUnitChange('C', e.target.value)}
+                        className="unit-select-small"
+                      >
+                        <MenuItem value="pF">pF</MenuItem>
+                        <MenuItem value="nF">nF</MenuItem>
+                        <MenuItem value="µF">µF</MenuItem>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Mostrar Ra */}
+                  <div className="result-item">
+                    <span>Resistencia Ra:</span>
+                    <div className="result-value-with-unit">
+                      <span>{results.displayed.Ra}</span>
+                      <Select
+                        value={resultUnits.Ra}
+                        onChange={(e) => handleResultUnitChange('Ra', e.target.value)}
+                        className="unit-select-small"
+                      >
+                        <MenuItem value="Ω">Ω</MenuItem>
+                        <MenuItem value="kΩ">kΩ</MenuItem>
+                        <MenuItem value="MΩ">MΩ</MenuItem>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Mostrar Rf */}
+                  <div className="result-item">
+                    <span>Resistencia Rf:</span>
+                    <div className="result-value-with-unit">
+                      <span>{results.displayed.Rf}</span>
+                      <Select
+                        value={resultUnits.Rf}
+                        onChange={(e) => handleResultUnitChange('Rf', e.target.value)}
+                        className="unit-select-small"
+                      >
+                        <MenuItem value="Ω">Ω</MenuItem>
+                        <MenuItem value="kΩ">kΩ</MenuItem>
+                        <MenuItem value="MΩ">MΩ</MenuItem>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Mostrar nR */}
+                  <div className="result-item">
+                    <span>Resistencia nR:</span>
+                    <div className="result-value-with-unit">
+                      <span>{results.displayed.nR}</span>
+                      <Select
+                        value={resultUnits.nR}
+                        onChange={(e) => handleResultUnitChange('nR', e.target.value)}
+                        className="unit-select-small"
+                      >
+                        <MenuItem value="Ω">Ω</MenuItem>
+                        <MenuItem value="kΩ">kΩ</MenuItem>
+                        <MenuItem value="MΩ">MΩ</MenuItem>
+                      </Select>
+                    </div>
+                  </div>
+                </Box>
+              </Grid>
+
+              {/* Función de transferencia - Derecha */}
+              <Grid item xs={12} md={6}>
+                <Box className="result-box">
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Función de Transferencia:
+                  </Typography>
+                  <div className="transfer-function">
+                    <MathJax>
+                      {"\\[H(s) = \\frac{s^2\\left(1 + \\frac{R_f}{R_a}\\right)}{s^2 + \\frac{1}{nRC}\\left(2n - \\frac{R_f}{R_a}\\right)s + \\frac{1}{nR^2C^2}}\\]"}
+                    </MathJax>
+                  </div>
+
+                  <Typography variant="h6" sx={{ mt: 4, mb: 2, color: 'var(--primary-dark)' }}>
+                    Función de Transferencia (Valores calculados):
+                  </Typography>
+                  <div className="transfer-function calculated">
+                    <MathJax>
+                      {`\\[H(s) = \\frac{\\displaystyle ${results.numerador}}{\\displaystyle ${results.denominador}}\\]`}
+                    </MathJax>
+                  </div>
+                </Box>
+              </Grid>
+            </Grid>
+          </div>
+        )}
+      </div>
+    </MathJaxContext>
   );
 }; 
