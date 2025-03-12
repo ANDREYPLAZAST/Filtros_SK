@@ -8,6 +8,11 @@ import { MathJax, MathJaxContext } from 'better-react-mathjax';
 
 const bodeOptions = {
   responsive: true,
+  plugins: {
+    legend: {
+      display: false
+    }
+  },
   scales: {
     x: {
       type: 'logarithmic' as const,
@@ -34,15 +39,24 @@ type Results = {
   Q: string;
   R: string;
   C: string;
-  nC: string;
   Rf: string;
   Ra: string;
   bodeData: Array<{x: number, y: number}>;
+  numerador: string;
+  denominador: string;
+  displayed: {
+    wo: string;
+    R: string;
+    Rf: string;
+    Ra: string;
+    C: string;
+  };
 }
 
 export const PasaBajosFilter = () => {
   const [inputs, setInputs] = useState({
     fo: '',
+    Q: '',
     A: '',
     C: '',
     R: '',
@@ -66,10 +80,10 @@ export const PasaBajosFilter = () => {
 
   const [resultUnits, setResultUnits] = useState({
     wo: 'Hz',
-    R: 'kΩ',
+    R: 'Ω',
     C: 'nF',
-    Rf: 'kΩ',
-    Ra: 'kΩ'
+    Rf: 'Ω',
+    Ra: 'Ω'
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,6 +100,118 @@ export const PasaBajosFilter = () => {
     });
   };
 
+  const convertResistanceUnit = (value: number, fromUnit: string, toUnit: string): number => {
+    // Convertir a ohms primero
+    let valueInOhms = value;
+    if (fromUnit === 'kΩ') {
+      valueInOhms = value * 1000;
+    } else if (fromUnit === 'MΩ') {
+      valueInOhms = value * 1000000;
+    }
+
+    // Convertir de ohms a la unidad deseada
+    if (toUnit === 'kΩ') {
+      return valueInOhms / 1000;
+    } else if (toUnit === 'MΩ') {
+      return valueInOhms / 1000000;
+    }
+    return valueInOhms; // Para Ω
+  };
+
+  const convertCapacitanceUnit = (value: number, fromUnit: string, toUnit: string): number => {
+    // Convertir a faradios primero
+    let valueInFarads = value;
+    if (fromUnit === 'µF') {
+      valueInFarads = value * 1e-6;
+    } else if (fromUnit === 'nF') {
+      valueInFarads = value * 1e-9;
+    } else if (fromUnit === 'pF') {
+      valueInFarads = value * 1e-12;
+    }
+
+    // Convertir de faradios a la unidad deseada
+    if (toUnit === 'µF') {
+      return valueInFarads * 1e6;
+    } else if (toUnit === 'nF') {
+      return valueInFarads * 1e9;
+    } else if (toUnit === 'pF') {
+      return valueInFarads * 1e12;
+    }
+    return valueInFarads;
+  };
+
+  const formatNumber = (num: number): string => {
+    return Number(num).toFixed(2);
+  };
+
+  const handleResultUnitChange = (param: keyof Results['displayed'], newUnit: string) => {
+    if (!results) return;
+
+    // Obtener el valor base
+    let baseValue = parseFloat(results[param]);
+    let currentUnit = resultUnits[param];
+    let convertedValue: number;
+
+    // Convertir según el tipo de parámetro
+    if (param === 'C') {
+      convertedValue = convertCapacitanceUnit(baseValue, 'F', newUnit);
+    } else if (param === 'wo') {
+      convertedValue = newUnit === 'Hz' ? baseValue : baseValue * 2 * Math.PI;
+    } else {
+      // Para R, Rf, Ra
+      convertedValue = convertResistanceUnit(baseValue, 'Ω', newUnit);
+    }
+
+    // Actualizar las unidades
+    setResultUnits(prev => ({
+      ...prev,
+      [param]: newUnit
+    }));
+
+    // Actualizar los valores mostrados
+    setResults(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        displayed: {
+          ...prev.displayed,
+          [param]: formatNumber(convertedValue)
+        }
+      };
+    });
+  };
+
+  // Añadir función para calcular la función de transferencia
+  const calcularFuncionTransferencia = (n: number, R: number, C: number, Rf: number, Ra: number) => {
+    // Log inicial para verificar las unidades
+    console.log('Valores de entrada:', {
+      n,
+      R: `${R} ohms`,
+      C: `${C} F`,
+      Rf: `${Rf} ohms`,
+      Ra: `${Ra} ohms`
+    });
+
+    // Calcular coeficientes
+    const num_coef = (1/(n * R * R * C * C)) * (1 + Rf/Ra);
+    const den_s_coef = (1/(n * R * C)) * (2 * n - Rf/Ra);
+    const den_ind = 1/(n * R * R * C * C);
+
+    // Formatear la función de transferencia sin el signo +
+    const numerador = num_coef.toExponential(3).replace('+', '');
+    const denominador = `s^2 + ${den_s_coef.toExponential(3).replace('+', '')}s + ${den_ind.toExponential(3).replace('+', '')}`;
+
+    return { 
+      numerador: numerador,
+      denominador: denominador,
+      coeficientes: {
+        num: num_coef,
+        den_s: den_s_coef,
+        den_ind: den_ind
+      }
+    };
+  };
+
   const calculateValues = () => {
     try {
       // Convertir frecuencia a Hz
@@ -98,10 +224,13 @@ export const PasaBajosFilter = () => {
       const A = Math.pow(10, A_db/20);
       console.log('Ganancia:', { A_db, A });
 
-      // Cálculo de n usando la ecuación n² + (2 - A²)n + 1 = 0
-      const a = 1;
-      const b = 2 - A * A;
-      const c = 1;
+      // Factor de calidad Q
+      const Q = parseFloat(inputs.Q);
+
+      // Cálculo de n usando la ecuación cuadrática del MATLAB
+      const a = 4;
+      const b = 4 - 4*A - 1/(Q*Q);
+      const c = 1 - 2*A + A*A;
       
       const discriminant = b * b - 4 * a * c;
       const n1 = (-b + Math.sqrt(discriminant)) / (2 * a);
@@ -113,11 +242,11 @@ export const PasaBajosFilter = () => {
       let C, R;
       if (capacitorMode === 'C') {
         C = parseFloat(inputs.C) * (units.C === 'µF' ? 1e-6 : units.C === 'nF' ? 1e-9 : 1e-12);
-        R = 1 / (wo * C * Math.sqrt(n));
+        R = 1 / (wo *wo*n * C);
         console.log('Modo C:', { C_input: C, R_calculado: R });
       } else {
         R = parseFloat(inputs.R) * (units.R === 'kΩ' ? 1000 : 1);
-        C = 1 / (wo * R * Math.sqrt(n));
+        C = 1 / (wo * wo * n * R);
         console.log('Modo R:', { R_input: R, C_calculado: C });
       }
 
@@ -125,41 +254,44 @@ export const PasaBajosFilter = () => {
       let Ra, Rf;
       if (resistanceMode === 'Ra') {
         Ra = parseFloat(inputs.Ra) * (units.Ra === 'kΩ' ? 1000 : 1);
-        Rf = Ra * (2 * n + 1);
+        Rf = Ra * (A - 1);
         console.log('Modo Ra:', { Ra_input: Ra, Rf_calculado: Rf });
       } else {
         Rf = parseFloat(inputs.Rf) * (units.Rf === 'kΩ' ? 1000 : 1);
-        Ra = Rf / (2 * n + 1);
+        Ra = Rf / (A - 1);
         console.log('Modo Rf:', { Rf_input: Rf, Ra_calculado: Ra });
       }
 
-      // Calcular Q
-      const Q = 1/(2 * Math.sqrt(n));
+      // Calcular la función de transferencia
+      const { numerador, denominador, coeficientes } = calcularFuncionTransferencia(
+        n,
+        R,
+        C,
+        Rf,
+        Ra
+      );
 
-      // Calcular nC (siempre)
-      const nC = n * C;
-
-      // Generar datos para el diagrama de Bode
-      const bodeData = generateBodeData();
+      // Generar datos para el diagrama de Bode usando los coeficientes calculados
+      const bodeData = generateBodeData(coeficientes.num, coeficientes.den_s, coeficientes.den_ind);
 
       return {
-        wo: (wo/(2*Math.PI)).toFixed(2) + ' Hz',
+        wo: (wo/(2*Math.PI)).toFixed(2),
         n: n.toFixed(3),
         Q: Q.toFixed(3),
-        R: (R/1000).toFixed(2) + ' kΩ',
-        C: C < 1e-9 ? 
-           (C*1e12).toFixed(2) + ' pF' : 
-           C < 1e-6 ? 
-           (C*1e9).toFixed(2) + ' nF' : 
-           (C*1e6).toFixed(2) + ' µF',
-        nC: nC < 1e-9 ? 
-           (nC*1e12).toFixed(2) + ' pF' : 
-           nC < 1e-6 ? 
-           (nC*1e9).toFixed(2) + ' nF' : 
-           (nC*1e6).toFixed(2) + ' µF',
-        Rf: (Rf/1000).toFixed(2) + ' kΩ',
-        Ra: (Ra/1000).toFixed(2) + ' kΩ',
-        bodeData
+        R: R.toString(),
+        C: C.toString(),
+        Rf: Rf.toString(),
+        Ra: Ra.toString(),
+        bodeData,
+        numerador,
+        denominador,
+        displayed: {
+          wo: (wo/(2*Math.PI)).toFixed(2),
+          R: formatNumber(R),
+          Rf: formatNumber(Rf),
+          Ra: formatNumber(Ra),
+          C: formatNumber(C < 1e-9 ? C*1e12 : C < 1e-6 ? C*1e9 : C*1e6)
+        }
       };
     } catch (error) {
       console.error('Error en los cálculos:', error);
@@ -167,59 +299,55 @@ export const PasaBajosFilter = () => {
     }
   };
 
-  const generateBodeData = () => {
+  const generateBodeData = (num_coef: number, den_s_coef: number, den_ind_coef: number) => {
     const data = [];
-    // Obtener los valores necesarios para el cálculo
-    const wo = 2 * Math.PI * parseFloat(results?.wo || '0');
-    const A = Math.pow(10, parseFloat(inputs.A)/20);
     
-    for(let f = 0.1; f <= 1000; f *= 1.1) {
+    // Generar puntos para el diagrama de Bode
+    for(let f = 0.1; f <= 1000000; f *= 1.1) {
       const w = 2 * Math.PI * f;
-      // Calcular la magnitud en dB para cada frecuencia
-      const magnitude = 20 * Math.log10(A / Math.sqrt(1 + Math.pow(w/wo, 4)));
+      // Calcular magnitud usando la función de transferencia
+      const s_squared = -(w * w);
+      const s_term = den_s_coef * w;
+      const numerator = num_coef;
+      const denominator = Math.sqrt(
+        Math.pow(s_squared - den_ind_coef, 2) + 
+        Math.pow(s_term, 2)
+      );
+      const magnitude = 20 * Math.log10(numerator/denominator);
       data.push({x: f, y: magnitude});
     }
     return data;
   };
 
+  // Añadir función para reiniciar las unidades
+  const resetToDefaultUnits = () => {
+    setResultUnits({
+      wo: 'Hz',
+      R: 'Ω',
+      C: 'nF',
+      Rf: 'Ω',
+      Ra: 'Ω'
+    });
+  };
+
   const handleCalculate = () => {
     try {
+      // Reiniciar las unidades a sus valores por defecto
+      resetToDefaultUnits();
+      
+      // Reiniciar los resultados anteriores
+      setResults(null);
+      setShowResults(false);
+      
+      // Calcular nuevos resultados
       const calculatedResults = calculateValues();
+      
+      // Actualizar resultados con los nuevos valores
       setResults(calculatedResults);
       setShowResults(true);
     } catch (error) {
       console.error('Error al calcular:', error);
     }
-  };
-
-  const formatValue = (value: number, type: string, unit: string) => {
-    switch(type) {
-      case 'frequency':
-        return unit === 'Hz' ? value : value * 2 * Math.PI;
-      case 'resistance':
-        switch(unit) {
-          case 'Ω': return value * 1000;
-          case 'kΩ': return value;
-          case 'MΩ': return value / 1000;
-          default: return value;
-        }
-      case 'capacitance':
-        switch(unit) {
-          case 'pF': return value * 1000000;
-          case 'nF': return value * 1000;
-          case 'µF': return value;
-          default: return value;
-        }
-      default:
-        return value;
-    }
-  };
-
-  const handleResultUnitChange = (param: string, newUnit: string) => {
-    setResultUnits({
-      ...resultUnits,
-      [param]: newUnit
-    });
   };
 
   return (
@@ -321,6 +449,19 @@ export const PasaBajosFilter = () => {
               <div className="input-field-container">
                 <TextField
                   className="cyber-input"
+                  label="Factor de calidad Q"
+                  name="Q"
+                  value={inputs.Q}
+                  onChange={handleInputChange}
+                  type="number"
+                  inputProps={{ step: "any" }}
+                  fullWidth
+                />
+              </div>
+
+              <div className="input-field-container">
+                <TextField
+                  className="cyber-input"
                   label="Ganancia"
                   name="A"
                   value={inputs.A}
@@ -329,6 +470,9 @@ export const PasaBajosFilter = () => {
                   inputProps={{ step: "any" }}
                   fullWidth
                 />
+                <div className="gain-unit">
+                  dB
+                </div>
               </div>
 
               {/* Switch para Capacitor/Resistencia */}
@@ -477,20 +621,17 @@ export const PasaBajosFilter = () => {
                   />
                   {/* Valores superpuestos */}
                   <div className="circuit-values">
-                    <span className="value nC-value">
-                      {formatValue(parseFloat(results.nC), 'capacitance', resultUnits.C)}
+                    <span className="value R-value">
+                      {`${results.displayed.R} ${resultUnits.R}`}
                     </span>
                     <span className="value C-value">
-                      {formatValue(parseFloat(results.C), 'capacitance', resultUnits.C)}
-                    </span>
-                    <span className="value R-value">
-                      {formatValue(parseFloat(results.R) * 1000, 'resistance', resultUnits.R)}
+                      {`${results.displayed.C} ${resultUnits.C}`}
                     </span>
                     <span className="value Rf-value">
-                      {formatValue(parseFloat(results.Rf) * 1000, 'resistance', resultUnits.Rf)}
+                      {`${results.displayed.Rf} ${resultUnits.Rf}`}
                     </span>
                     <span className="value Ra-value">
-                      {formatValue(parseFloat(results.Ra) * 1000, 'resistance', resultUnits.Ra)}
+                      {`${results.displayed.Ra} ${resultUnits.Ra}`}
                     </span>
                   </div>
                 </div>
@@ -514,17 +655,19 @@ export const PasaBajosFilter = () => {
                 </div>
               </Grid>
 
+              {/* Valores calculados */}
               {/* Valores calculados - Izquierda */}
               <Grid item xs={12} md={6}>
                 <Box className="result-box">
                   <Typography variant="h6" sx={{ mb: 2, color: 'var(--primary-dark)' }}>
                     Valores calculados:
                   </Typography>
+                  
                   {/* Frecuencia de corte */}
                   <div className="result-item">
                     <span>Frecuencia de corte (fo):</span>
                     <div className="result-value-with-unit">
-                      <span>{parseFloat(results.wo).toFixed(2)}</span>
+                      <span>{results.displayed.wo}</span>
                       <Select
                         value={resultUnits.wo}
                         onChange={(e) => handleResultUnitChange('wo', e.target.value)}
@@ -536,55 +679,23 @@ export const PasaBajosFilter = () => {
                     </div>
                   </div>
 
-                  {/* Factor n - sin unidades */}
+                  {/* Factor n */}
                   <div className="result-item">
                     <span>Factor n:</span>
                     <span>{results.n}</span>
                   </div>
 
-                  {/* Factor Q - sin unidades */}
+                  {/* Factor Q */}
                   <div className="result-item">
                     <span>Factor Q:</span>
                     <span>{results.Q}</span>
                   </div>
 
-                  {/* Mostrar C y nC */}
-                  <div className="result-item">
-                    <span>Capacitor C:</span>
-                    <div className="result-value-with-unit">
-                      <span>{parseFloat(results.C)}</span>
-                      <Select
-                        value={resultUnits.C}
-                        onChange={(e) => handleResultUnitChange('C', e.target.value)}
-                        className="unit-select-small"
-                      >
-                        <MenuItem value="pF">pF</MenuItem>
-                        <MenuItem value="nF">nF</MenuItem>
-                        <MenuItem value="µF">µF</MenuItem>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="result-item">
-                    <span>Capacitor nC:</span>
-                    <div className="result-value-with-unit">
-                      <span>{parseFloat(results.nC)}</span>
-                      <Select
-                        value={resultUnits.C}
-                        onChange={(e) => handleResultUnitChange('C', e.target.value)}
-                        className="unit-select-small"
-                      >
-                        <MenuItem value="pF">pF</MenuItem>
-                        <MenuItem value="nF">nF</MenuItem>
-                        <MenuItem value="µF">µF</MenuItem>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* Mostrar R y Rf */}
+                  {/* Mostrar R */}
                   <div className="result-item">
                     <span>Resistencia R:</span>
                     <div className="result-value-with-unit">
-                      <span>{parseFloat(results.R)}</span>
+                      <span>{results.displayed.R}</span>
                       <Select
                         value={resultUnits.R}
                         onChange={(e) => handleResultUnitChange('R', e.target.value)}
@@ -596,10 +707,46 @@ export const PasaBajosFilter = () => {
                       </Select>
                     </div>
                   </div>
+
+                  {/* Mostrar C */}
+                  <div className="result-item">
+                    <span>Capacitor C:</span>
+                    <div className="result-value-with-unit">
+                      <span>{results.displayed.C}</span>
+                      <Select
+                        value={resultUnits.C}
+                        onChange={(e) => handleResultUnitChange('C', e.target.value)}
+                        className="unit-select-small"
+                      >
+                        <MenuItem value="pF">pF</MenuItem>
+                        <MenuItem value="nF">nF</MenuItem>
+                        <MenuItem value="µF">µF</MenuItem>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Mostrar Ra */}
+                  <div className="result-item">
+                    <span>Resistencia Ra:</span>
+                    <div className="result-value-with-unit">
+                      <span>{results.displayed.Ra}</span>
+                      <Select
+                        value={resultUnits.Ra}
+                        onChange={(e) => handleResultUnitChange('Ra', e.target.value)}
+                        className="unit-select-small"
+                      >
+                        <MenuItem value="Ω">Ω</MenuItem>
+                        <MenuItem value="kΩ">kΩ</MenuItem>
+                        <MenuItem value="MΩ">MΩ</MenuItem>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Mostrar Rf */}
                   <div className="result-item">
                     <span>Resistencia Rf:</span>
                     <div className="result-value-with-unit">
-                      <span>{parseFloat(results.Rf)}</span>
+                      <span>{results.displayed.Rf}</span>
                       <Select
                         value={resultUnits.Rf}
                         onChange={(e) => handleResultUnitChange('Rf', e.target.value)}
@@ -617,12 +764,12 @@ export const PasaBajosFilter = () => {
               {/* Función de transferencia - Derecha */}
               <Grid item xs={12} md={6}>
                 <Box className="result-box">
-                  <Typography variant="h6" sx={{ mb: 2, color: 'var(--primary-dark)' }}>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
                     Función de Transferencia:
                   </Typography>
                   <div className="transfer-function">
                     <MathJax>
-                      {"\\[H(s) = \\frac{\\frac{1}{nR^2C^2}\\left(1 + \\frac{R_f}{R_a}\\right)}{s^2 + \\frac{1}{nRC}\\left(2n-\\frac{R_f}{R_a}\\right)s + \\frac{1}{nR^2C^2}}\\]"}
+                      {"\\[H(s) = \\frac{\\frac{1}{nR^2C^2}\\left(1 + \\frac{R_f}{R_a}\\right)}{s^2 + \\frac{1}{nRC}\\left(2n - \\frac{R_f}{R_a}\\right)s + \\frac{1}{nR^2C^2}}\\]"}
                     </MathJax>
                   </div>
 
@@ -631,7 +778,7 @@ export const PasaBajosFilter = () => {
                   </Typography>
                   <div className="transfer-function calculated">
                     <MathJax>
-                      {``}
+                      {`\\[H(s) = \\frac{\\displaystyle ${results.numerador}}{\\displaystyle ${results.denominador}}\\]`}
                     </MathJax>
                   </div>
                 </Box>
